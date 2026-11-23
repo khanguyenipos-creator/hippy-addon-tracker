@@ -202,7 +202,7 @@ textarea{resize:vertical;width:100%}
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3V4a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v3H4a1 1 0 0 0-1 1v5a3 3 0 0 0 3 3h2"/><path d="M12 11v0"/><rect x="9" y="13" width="6" height="8" rx="1"/></svg></div>
-      <div><div class="bt">hippy.id.vn</div><div class="bs">Cổng điều phối triển khai F&amp;B</div></div>
+      <div><div class="bt">Trộm Chó Team</div><div class="bs">Cổng điều phối triển khai F&amp;B</div></div>
     </div>
     <nav class="nav">
       <div class="nav-cap">Điều hướng chính</div>
@@ -292,17 +292,18 @@ textarea{resize:vertical;width:100%}
               <div class="form-grid">
                 <div class="field"><label>Mã phiếu</label><input id="f_id" readonly><div class="hint">Tự sinh theo năm</div></div>
                 <div class="field"><label>Thời gian tiếp nhận</label><input type="datetime-local" id="f_created"></div>
-                <div class="field"><label>Mã thương hiệu <span class="req">*</span></label><input id="f_brand" placeholder="VD: TH08412" required></div>
-                <div class="field"><label>Tên Quán / Khách hàng <span class="req">*</span></label><input id="f_customer" placeholder="VD: Cơm Tấm Phúc Lộc Thọ - Q.1" required></div>
-                <div class="field"><label>SĐT liên hệ <span class="req">*</span></label><input id="f_phone" placeholder="VD: 0908 123 456" required></div>
+                <div class="field"><label>Mã thương hiệu <span class="req">*</span></label><input id="f_brand" list="dl_brand" autocomplete="off" placeholder="VD: TH08412" required></div>
+                <div class="field"><label>Tên Quán / Khách hàng <span class="req">*</span></label><input id="f_customer" list="dl_customer" autocomplete="off" placeholder="VD: Cơm Tấm Phúc Lộc Thọ - Q.1" required><div class="hint">💡 Chọn quán đã có → tự điền Mã TH, SĐT, POS…</div></div>
+                <div class="field"><label>SĐT liên hệ <span class="req">*</span></label><input id="f_phone" list="dl_phone" inputmode="tel" autocomplete="off" placeholder="VD: 0908 123 456" required></div>
                 <div class="field"><label>Phần mềm POS</label><select id="f_pos"></select></div>
                 <div class="field"><label>Nhóm Add-on</label><select id="f_cat"></select></div>
                 <div class="field"><label>KT phụ trách</label><select id="f_tech"></select></div>
-                <div class="field full"><label>Nhà cung cấp / Thiết bị</label><input id="f_provider" placeholder="Nhập hoặc chọn nhanh bên dưới"><div class="tags" id="providerTags"></div></div>
+                <div class="field full"><label>Nhà cung cấp / Thiết bị</label><input id="f_provider" list="dl_provider" autocomplete="off" placeholder="Nhập hoặc chọn nhanh bên dưới"><div class="tags" id="providerTags"></div></div>
                 <div class="field"><label>Hình thức</label><div class="seg" id="segSupport"><button type="button" data-v="Online" class="sel">Online</button><button type="button" data-v="Onsite">Onsite</button></div></div>
                 <div class="field"><label>Trạng thái</label><select id="f_status"></select></div>
                 <div class="field full"><label>Ghi chú chi tiết</label><textarea id="f_note" rows="3" placeholder="Mô tả yêu cầu, tình trạng, hẹn lịch…"></textarea></div>
               </div>
+              <datalist id="dl_brand"></datalist><datalist id="dl_customer"></datalist><datalist id="dl_phone"></datalist><datalist id="dl_provider"></datalist>
               <div class="form-foot">
                 <button type="button" class="btn" id="btnResetForm">Làm mới</button>
                 <button type="submit" class="btn btn-primary">Lưu phiếu</button>
@@ -426,6 +427,7 @@ function setTab(name){
   $('#pSub').textContent=PAGE_META[name][1];
   closeSidebar();
   if(name==='overview')renderOverview();
+  if(name==='new')refreshDatalists();
   if(name==='list')renderList();
   if(name==='config')renderConfig();
 }
@@ -520,11 +522,38 @@ function resetForm(){
   fillSelect($('#f_tech'),CFG.tech,CFG.tech[0]); fillSelect($('#f_status'),STATUSES,'Mới tiếp nhận');
   supportType='Online'; $$('#segSupport button').forEach(b=>b.classList.toggle('sel',b.dataset.v==='Online'));
   $$('#providerTags .tag').forEach(t=>t.classList.remove('sel'));
+  if(typeof refreshDatalists==='function')refreshDatalists();
 }
 function renderProviderTags(){$('#providerTags').innerHTML=PROVIDER_TAGS.map(p=>`<button type="button" class="tag" data-p="${p}">${p}</button>`).join('');}
 $('#providerTags').addEventListener('click',e=>{const b=e.target.closest('.tag');if(!b)return;$('#f_provider').value=b.dataset.p;$$('#providerTags .tag').forEach(t=>t.classList.toggle('sel',t===b));});
 $('#segSupport').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;supportType=b.dataset.v;$$('#segSupport button').forEach(x=>x.classList.toggle('sel',x===b));});
 $('#btnResetForm').addEventListener('click',resetForm);
+
+/* ---- Điền nhanh: gợi ý tự động + tự điền từ quán đã có ---- */
+function uniq(a){return [...new Set(a.filter(v=>v&&String(v).trim()))];}
+function refreshDatalists(){
+  const set=(id,vals)=>{const dl=document.getElementById(id);if(dl)dl.innerHTML=vals.map(v=>`<option value="${String(v).replace(/"/g,'&quot;')}"></option>`).join('');};
+  set('dl_brand',uniq(DATA.map(t=>t.brand_code)));
+  set('dl_customer',uniq(DATA.map(t=>t.customer_name)));
+  set('dl_phone',uniq(DATA.map(t=>t.phone)));
+  set('dl_provider',uniq([...PROVIDER_TAGS,...DATA.map(t=>t.provider_or_device)]));
+}
+function setSelIfOpt(sel,val){const s=$(sel);if(s&&val&&[...s.options].some(o=>o.value===val))s.value=val;}
+function applyKnown(by){
+  const bv=$('#f_brand').value.trim().toLowerCase(), cv=$('#f_customer').value.trim().toLowerCase(), pv=$('#f_phone').value.trim().toLowerCase();
+  const rev=DATA.slice().reverse(); let m=null;
+  if(by==='customer'&&cv)m=rev.find(t=>t.customer_name.toLowerCase()===cv);
+  else if(by==='brand'&&bv)m=rev.find(t=>t.brand_code.toLowerCase()===bv);
+  else if(by==='phone'&&pv)m=rev.find(t=>t.phone.toLowerCase()===pv);
+  if(!m)return;
+  $('#f_brand').value=m.brand_code; $('#f_customer').value=m.customer_name; $('#f_phone').value=m.phone;
+  if(m.provider_or_device)$('#f_provider').value=m.provider_or_device;
+  setSelIfOpt('#f_pos',m.pos_system); setSelIfOpt('#f_cat',m.addon_category); setSelIfOpt('#f_tech',m.technician);
+  toast('Đã tự điền từ phiếu cũ của "'+m.customer_name+'"');
+}
+$('#f_customer').addEventListener('change',()=>applyKnown('customer'));
+$('#f_brand').addEventListener('change',()=>applyKnown('brand'));
+$('#f_phone').addEventListener('change',()=>applyKnown('phone'));
 $('#intakeForm').addEventListener('submit',e=>{
   e.preventDefault();
   const brand=$('#f_brand').value.trim(),cust=$('#f_customer').value.trim(),phone=$('#f_phone').value.trim();
