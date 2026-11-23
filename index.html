@@ -292,18 +292,19 @@ textarea{resize:vertical;width:100%}
               <div class="form-grid">
                 <div class="field"><label>Mã phiếu</label><input id="f_id" readonly><div class="hint">Tự sinh theo năm</div></div>
                 <div class="field"><label>Thời gian tiếp nhận</label><input type="datetime-local" id="f_created"></div>
+                <div class="field"><label>POS_ID</label><input id="f_posid" list="dl_posid" autocomplete="off" placeholder="VD: 8412"><div class="hint">💡 Nhập POS_ID / Mã TH / tên quán đã có → tự hiện lại thông tin, khỏi nhập trùng</div></div>
                 <div class="field"><label>Mã thương hiệu <span class="req">*</span></label><input id="f_brand" list="dl_brand" autocomplete="off" placeholder="VD: TH08412" required></div>
-                <div class="field"><label>Tên Quán / Khách hàng <span class="req">*</span></label><input id="f_customer" list="dl_customer" autocomplete="off" placeholder="VD: Cơm Tấm Phúc Lộc Thọ - Q.1" required><div class="hint">💡 Chọn quán đã có → tự điền Mã TH, SĐT, POS…</div></div>
+                <div class="field"><label>Tên Quán / Khách hàng <span class="req">*</span></label><input id="f_customer" list="dl_customer" autocomplete="off" placeholder="VD: Cơm Tấm Phúc Lộc Thọ - Q.1" required></div>
                 <div class="field"><label>SĐT liên hệ <span class="req">*</span></label><input id="f_phone" list="dl_phone" inputmode="tel" autocomplete="off" placeholder="VD: 0908 123 456" required></div>
                 <div class="field"><label>Phần mềm POS</label><select id="f_pos"></select></div>
                 <div class="field"><label>Nhóm Add-on</label><select id="f_cat"></select></div>
                 <div class="field"><label>KT phụ trách</label><select id="f_tech"></select></div>
-                <div class="field full"><label>Nhà cung cấp / Thiết bị</label><input id="f_provider" list="dl_provider" autocomplete="off" placeholder="Nhập hoặc chọn nhanh bên dưới"><div class="tags" id="providerTags"></div></div>
                 <div class="field"><label>Hình thức</label><div class="seg" id="segSupport"><button type="button" data-v="Online" class="sel">Online</button><button type="button" data-v="Onsite">Onsite</button></div></div>
-                <div class="field"><label>Trạng thái</label><select id="f_status"></select></div>
+                <div class="field full"><label>Nhà cung cấp / Thiết bị</label><input id="f_provider" list="dl_provider" autocomplete="off" placeholder="Nhập hoặc chọn nhanh bên dưới"><div class="tags" id="providerTags"></div></div>
+                <div class="field full"><label>Trạng thái</label><select id="f_status"></select></div>
                 <div class="field full"><label>Ghi chú chi tiết</label><textarea id="f_note" rows="3" placeholder="Mô tả yêu cầu, tình trạng, hẹn lịch…"></textarea></div>
               </div>
-              <datalist id="dl_brand"></datalist><datalist id="dl_customer"></datalist><datalist id="dl_phone"></datalist><datalist id="dl_provider"></datalist>
+              <datalist id="dl_posid"></datalist><datalist id="dl_brand"></datalist><datalist id="dl_customer"></datalist><datalist id="dl_phone"></datalist><datalist id="dl_provider"></datalist>
               <div class="form-foot">
                 <button type="button" class="btn" id="btnResetForm">Làm mới</button>
                 <button type="submit" class="btn btn-primary">Lưu phiếu</button>
@@ -357,7 +358,7 @@ textarea{resize:vertical;width:100%}
    LƯU TRỮ — hiện dùng localStorage.
    Thay bằng API backend MySQL/SQL Server tại loadData/saveData/loadConfig/saveConfig.
    ============================================================ */
-const LS_DATA='addon_tickets_v2', LS_CFG='addon_config_v2', OVERDUE_HOURS=4;
+const LS_DATA='addon_tickets_v3', LS_CFG='addon_config_v2', OVERDUE_HOURS=4;
 const STATUSES=['Mới tiếp nhận','Đang xử lý','Chờ khách/Đối tác','Hoàn thành','Hủy'];
 const OPEN_STATUSES=['Mới tiếp nhận','Đang xử lý','Chờ khách/Đối tác'];
 const PROVIDER_TAGS=['IPOSINVOICE','VNPT','BKAV','M-invoice','Me-invoice','MoMo EDC','iHub','iTP3350','VNPay QR'];
@@ -392,14 +393,14 @@ function saveConfig(c){ // TODO: Gọi API backend tại đây — POST/PUT /api
 function iso(h){return new Date(Date.now()-h*3600000).toISOString();}
 function seedData(){
   return [
-    {id:'TK-2026-001',created_at:iso(7),brand_code:'TH08412',customer_name:'Cơm Tấm Phúc Lộc Thọ - Q.1',phone:'0908123456',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'IPOSINVOICE',support_type:'Online',technician:'Thành',status:'Hoàn thành',note:'Cấu hình phát hành HĐĐT, test xuất hóa đơn OK.',completed_at:iso(4.5)},
-    {id:'TK-2026-002',created_at:iso(6),brand_code:'TH09105',customer_name:'Phúc Long Coffee - Thảo Điền',phone:'0912345678',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Thanh toán (MoMo / VNPay / EDC)',provider_or_device:'MoMo EDC',support_type:'Onsite',technician:'Bình',status:'Đang xử lý',note:'Lắp máy EDC MoMo, chờ kích hoạt MID.',completed_at:null},
-    {id:'TK-2026-003',created_at:iso(5),brand_code:'TH07554',customer_name:'Bún Đậu Mắm Tôm A Chánh',phone:'0987654321',pos_system:'FABi',addon_category:'Sàn TMĐT (GrabFood / ShopeeFood)',provider_or_device:'GrabFood, ShopeeFood',support_type:'Online',technician:'Dũng',status:'Chờ khách/Đối tác',note:'Chờ khách gửi tài khoản Grab Merchant.',completed_at:null},
-    {id:'TK-2026-004',created_at:iso(2.4),brand_code:'TH10299',customer_name:'Lẩu Bò Nhà Gỗ - Gò Vấp',phone:'0933445566',pos_system:'POS PC 2.2.1.8',addon_category:'iHub / Kết nối phần cứng',provider_or_device:'iHub, iTP3350',support_type:'Onsite',technician:'Kha',status:'Đang xử lý',note:'Cài máy in bếp qua iHub.',completed_at:null},
-    {id:'TK-2026-005',created_at:iso(0.7),brand_code:'TH11042',customer_name:'Highlands Coffee - Phan Xích Long',phone:'0918223344',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'BKAV',support_type:'Online',technician:'Thành',status:'Mới tiếp nhận',note:'Đăng ký phát hành HĐĐT BKAV.',completed_at:null},
-    {id:'TK-2026-006',created_at:iso(25),brand_code:'TH06218',customer_name:'Katinat Saigon Kafe - Nguyễn Huệ',phone:'0977889900',pos_system:'TCH',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'VNPT',support_type:'Online',technician:'Bình',status:'Hoàn thành',note:'Kết nối HĐĐT VNPT cho hệ TCH.',completed_at:iso(22)},
-    {id:'TK-2026-007',created_at:iso(50),brand_code:'TH04921',customer_name:'Bánh Mì Huỳnh Hoa - Lê Thị Riêng',phone:'0901223344',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Thanh toán (MoMo / VNPay / EDC)',provider_or_device:'VNPay QR',support_type:'Online',technician:'Dũng',status:'Hoàn thành',note:'Tích hợp VNPay QR, test thanh toán OK.',completed_at:iso(47)},
-    {id:'TK-2026-008',created_at:iso(73),brand_code:'TH03010',customer_name:'Phở Hòa Pasteur - Quận 3',phone:'0909888766',pos_system:'POS PC 2.2.1.8',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'M-invoice',support_type:'Onsite',technician:'Kha',status:'Hoàn thành',note:'Phát hành HĐĐT M-invoice.',completed_at:iso(69)}
+    {id:'TK-2026-001',created_at:iso(7),brand_code:'TH08412',pos_id:'8412',customer_name:'Cơm Tấm Phúc Lộc Thọ - Q.1',phone:'0908123456',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'IPOSINVOICE',support_type:'Online',technician:'Thành',status:'Hoàn thành',note:'Cấu hình phát hành HĐĐT, test xuất hóa đơn OK.',completed_at:iso(4.5)},
+    {id:'TK-2026-002',created_at:iso(6),brand_code:'TH09105',pos_id:'9105',customer_name:'Phúc Long Coffee - Thảo Điền',phone:'0912345678',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Thanh toán (MoMo / VNPay / EDC)',provider_or_device:'MoMo EDC',support_type:'Onsite',technician:'Bình',status:'Đang xử lý',note:'Lắp máy EDC MoMo, chờ kích hoạt MID.',completed_at:null},
+    {id:'TK-2026-003',created_at:iso(5),brand_code:'TH07554',pos_id:'7554',customer_name:'Bún Đậu Mắm Tôm A Chánh',phone:'0987654321',pos_system:'FABi',addon_category:'Sàn TMĐT (GrabFood / ShopeeFood)',provider_or_device:'GrabFood, ShopeeFood',support_type:'Online',technician:'Dũng',status:'Chờ khách/Đối tác',note:'Chờ khách gửi tài khoản Grab Merchant.',completed_at:null},
+    {id:'TK-2026-004',created_at:iso(2.4),brand_code:'TH10299',pos_id:'10299',customer_name:'Lẩu Bò Nhà Gỗ - Gò Vấp',phone:'0933445566',pos_system:'POS PC 2.2.1.8',addon_category:'iHub / Kết nối phần cứng',provider_or_device:'iHub, iTP3350',support_type:'Onsite',technician:'Kha',status:'Đang xử lý',note:'Cài máy in bếp qua iHub.',completed_at:null},
+    {id:'TK-2026-005',created_at:iso(0.7),brand_code:'TH11042',pos_id:'11042',customer_name:'Highlands Coffee - Phan Xích Long',phone:'0918223344',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'BKAV',support_type:'Online',technician:'Thành',status:'Mới tiếp nhận',note:'Đăng ký phát hành HĐĐT BKAV.',completed_at:null},
+    {id:'TK-2026-006',created_at:iso(25),brand_code:'TH06218',pos_id:'6218',customer_name:'Katinat Saigon Kafe - Nguyễn Huệ',phone:'0977889900',pos_system:'TCH',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'VNPT',support_type:'Online',technician:'Bình',status:'Hoàn thành',note:'Kết nối HĐĐT VNPT cho hệ TCH.',completed_at:iso(22)},
+    {id:'TK-2026-007',created_at:iso(50),brand_code:'TH04921',pos_id:'4921',customer_name:'Bánh Mì Huỳnh Hoa - Lê Thị Riêng',phone:'0901223344',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Thanh toán (MoMo / VNPay / EDC)',provider_or_device:'VNPay QR',support_type:'Online',technician:'Dũng',status:'Hoàn thành',note:'Tích hợp VNPay QR, test thanh toán OK.',completed_at:iso(47)},
+    {id:'TK-2026-008',created_at:iso(73),brand_code:'TH03010',pos_id:'3010',customer_name:'Phở Hòa Pasteur - Quận 3',phone:'0909888766',pos_system:'POS PC 2.2.1.8',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'M-invoice',support_type:'Onsite',technician:'Kha',status:'Hoàn thành',note:'Phát hành HĐĐT M-invoice.',completed_at:iso(69)}
   ];
 }
 
@@ -468,7 +469,7 @@ function renderOverview(){
   $('#openTable tbody').innerHTML=open.length?open.map(t=>`
     <tr class="${isOverdue(t)?'row-overdue':''}">
       <td><div class="c-main mono">${t.id}</div><div class="c-sub">${fmtShort(t.created_at)}</div></td>
-      <td><div class="c-main">${t.customer_name}</div><div class="c-sub">${t.brand_code} · ${t.phone}</div></td>
+      <td><div class="c-main">${t.customer_name}</div><div class="c-sub">${t.pos_id?'POS '+t.pos_id+' · ':''}${t.brand_code} · ${t.phone}</div></td>
       <td>${t.addon_category}</td><td>${t.technician||'—'} · ${t.support_type}</td>
       <td class="mono">${hoursOpen(t).toFixed(1)}</td><td>${stChip(t.status,isOverdue(t))}</td>
     </tr>`).join(''):`<tr><td colspan="6"><div class="empty">Không có ca nào đang mở trong khoảng lọc.</div></td></tr>`;
@@ -502,9 +503,9 @@ $('#fClear').addEventListener('click',()=>{$('#fFrom').value='';$('#fTo').value=
 /* ---------- EXPORT ---------- */
 $('#btnExport').addEventListener('click',()=>{
   const rows=filteredByDate(); if(!rows.length){toast('Không có dữ liệu để xuất');return;}
-  const aoa=rows.map(t=>({'Mã phiếu':t.id,'Thời gian tiếp nhận':fmtDT(t.created_at),'Mã thương hiệu':t.brand_code,'Khách hàng':t.customer_name,'SĐT':t.phone,'Phần mềm POS':t.pos_system,'Nhóm Add-on':t.addon_category,'NCC / Thiết bị':t.provider_or_device,'Hình thức':t.support_type,'KT phụ trách':t.technician,'Trạng thái':t.status,'Hoàn thành lúc':t.completed_at?fmtDT(t.completed_at):'','Thời gian xử lý (giờ)':procHours(t)!=null?procHours(t).toFixed(1):'','Quá hạn >4h':isOverdue(t)?'Có':'','Ghi chú':t.note||''}));
+  const aoa=rows.map(t=>({'Mã phiếu':t.id,'Thời gian tiếp nhận':fmtDT(t.created_at),'POS_ID':t.pos_id||'','Mã thương hiệu':t.brand_code,'Khách hàng':t.customer_name,'SĐT':t.phone,'Phần mềm POS':t.pos_system,'Nhóm Add-on':t.addon_category,'NCC / Thiết bị':t.provider_or_device,'Hình thức':t.support_type,'KT phụ trách':t.technician,'Trạng thái':t.status,'Hoàn thành lúc':t.completed_at?fmtDT(t.completed_at):'','Thời gian xử lý (giờ)':procHours(t)!=null?procHours(t).toFixed(1):'','Quá hạn >4h':isOverdue(t)?'Có':'','Ghi chú':t.note||''}));
   const ws=XLSX.utils.json_to_sheet(aoa);
-  ws['!cols']=[{wch:13},{wch:18},{wch:14},{wch:32},{wch:14},{wch:22},{wch:28},{wch:18},{wch:9},{wch:14},{wch:16},{wch:18},{wch:16},{wch:11},{wch:40}];
+  ws['!cols']=[{wch:13},{wch:18},{wch:10},{wch:14},{wch:32},{wch:14},{wch:22},{wch:28},{wch:18},{wch:9},{wch:14},{wch:16},{wch:18},{wch:16},{wch:11},{wch:40}];
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'BaoCao_Addon');
   const d=new Date(),stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
   XLSX.writeFile(wb,`BaoCao_TrienKhai_Addon_${stamp}.xlsx`); toast('Đã xuất '+rows.length+' phiếu ra Excel');
@@ -517,7 +518,7 @@ function resetForm(){
   $('#f_id').value=nextId();
   const n=new Date(),off=n.getTimezoneOffset();
   $('#f_created').value=new Date(n-off*60000).toISOString().slice(0,16);
-  ['f_brand','f_customer','f_phone','f_provider','f_note'].forEach(id=>$('#'+id).value='');
+  ['f_posid','f_brand','f_customer','f_phone','f_provider','f_note'].forEach(id=>$('#'+id).value='');
   fillSelect($('#f_pos'),CFG.pos,CFG.pos[0]); fillSelect($('#f_cat'),CFG.cat,CFG.cat[0]);
   fillSelect($('#f_tech'),CFG.tech,CFG.tech[0]); fillSelect($('#f_status'),STATUSES,'Mới tiếp nhận');
   supportType='Online'; $$('#segSupport button').forEach(b=>b.classList.toggle('sel',b.dataset.v==='Online'));
@@ -533,6 +534,7 @@ $('#btnResetForm').addEventListener('click',resetForm);
 function uniq(a){return [...new Set(a.filter(v=>v&&String(v).trim()))];}
 function refreshDatalists(){
   const set=(id,vals)=>{const dl=document.getElementById(id);if(dl)dl.innerHTML=vals.map(v=>`<option value="${String(v).replace(/"/g,'&quot;')}"></option>`).join('');};
+  set('dl_posid',uniq(DATA.map(t=>t.pos_id)));
   set('dl_brand',uniq(DATA.map(t=>t.brand_code)));
   set('dl_customer',uniq(DATA.map(t=>t.customer_name)));
   set('dl_phone',uniq(DATA.map(t=>t.phone)));
@@ -540,17 +542,21 @@ function refreshDatalists(){
 }
 function setSelIfOpt(sel,val){const s=$(sel);if(s&&val&&[...s.options].some(o=>o.value===val))s.value=val;}
 function applyKnown(by){
-  const bv=$('#f_brand').value.trim().toLowerCase(), cv=$('#f_customer').value.trim().toLowerCase(), pv=$('#f_phone').value.trim().toLowerCase();
+  const iv=$('#f_posid').value.trim().toLowerCase(), bv=$('#f_brand').value.trim().toLowerCase(), cv=$('#f_customer').value.trim().toLowerCase(), pv=$('#f_phone').value.trim().toLowerCase();
   const rev=DATA.slice().reverse(); let m=null;
-  if(by==='customer'&&cv)m=rev.find(t=>t.customer_name.toLowerCase()===cv);
+  if(by==='posid'&&iv)m=rev.find(t=>String(t.pos_id||'').toLowerCase()===iv);
+  else if(by==='customer'&&cv)m=rev.find(t=>t.customer_name.toLowerCase()===cv);
   else if(by==='brand'&&bv)m=rev.find(t=>t.brand_code.toLowerCase()===bv);
   else if(by==='phone'&&pv)m=rev.find(t=>t.phone.toLowerCase()===pv);
   if(!m)return;
+  if(m.pos_id)$('#f_posid').value=m.pos_id;
   $('#f_brand').value=m.brand_code; $('#f_customer').value=m.customer_name; $('#f_phone').value=m.phone;
   if(m.provider_or_device)$('#f_provider').value=m.provider_or_device;
   setSelIfOpt('#f_pos',m.pos_system); setSelIfOpt('#f_cat',m.addon_category); setSelIfOpt('#f_tech',m.technician);
-  toast('Đã tự điền từ phiếu cũ của "'+m.customer_name+'"');
+  const cnt=DATA.filter(t=>(m.pos_id&&t.pos_id===m.pos_id)||t.brand_code===m.brand_code).length;
+  toast('Đã hiện lại quán "'+m.customer_name+'" — '+cnt+' phiếu trước đó');
 }
+$('#f_posid').addEventListener('change',()=>applyKnown('posid'));
 $('#f_customer').addEventListener('change',()=>applyKnown('customer'));
 $('#f_brand').addEventListener('change',()=>applyKnown('brand'));
 $('#f_phone').addEventListener('change',()=>applyKnown('phone'));
@@ -559,7 +565,7 @@ $('#intakeForm').addEventListener('submit',e=>{
   const brand=$('#f_brand').value.trim(),cust=$('#f_customer').value.trim(),phone=$('#f_phone').value.trim();
   if(!brand||!cust||!phone){toast('Vui lòng nhập Mã TH, Tên quán và SĐT');return;}
   const cl=$('#f_created').value, status=$('#f_status').value;
-  DATA.push({id:$('#f_id').value,created_at:cl?new Date(cl).toISOString():new Date().toISOString(),brand_code:brand,customer_name:cust,phone:phone,pos_system:$('#f_pos').value,addon_category:$('#f_cat').value,provider_or_device:$('#f_provider').value.trim(),support_type:supportType,technician:$('#f_tech').value,status:status,note:$('#f_note').value.trim(),completed_at:status==='Hoàn thành'?new Date().toISOString():null});
+  DATA.push({id:$('#f_id').value,created_at:cl?new Date(cl).toISOString():new Date().toISOString(),brand_code:brand,pos_id:$('#f_posid').value.trim(),customer_name:cust,phone:phone,pos_system:$('#f_pos').value,addon_category:$('#f_cat').value,provider_or_device:$('#f_provider').value.trim(),support_type:supportType,technician:$('#f_tech').value,status:status,note:$('#f_note').value.trim(),completed_at:status==='Hoàn thành'?new Date().toISOString():null});
   saveData(DATA); toast('Đã lưu phiếu '+$('#f_id').value); resetForm(); updateCounts(); setTab('list');
 });
 
@@ -579,7 +585,7 @@ function renderList(){
     const ph=procHours(t), cls=statusClass[t.status]||'s-new';
     return `<tr class="${isOverdue(t)?'row-overdue':''}">
       <td><div class="c-main mono">${t.id}</div><div class="c-sub">${fmtShort(t.created_at)}</div></td>
-      <td><div class="c-main">${t.customer_name}</div><div class="c-sub">${t.brand_code} · ${t.phone}</div></td>
+      <td><div class="c-main">${t.customer_name}</div><div class="c-sub">${t.pos_id?'POS '+t.pos_id+' · ':''}${t.brand_code} · ${t.phone}</div></td>
       <td><div class="c-main">${t.provider_or_device||'—'}</div><div class="c-sub">${t.pos_system}</div></td>
       <td>${t.technician||'—'} · ${t.support_type}</td>
       <td class="mono">${ph!=null?ph.toFixed(1):(isOpen(t)?'⏳ '+hoursOpen(t).toFixed(1):'—')}${isOverdue(t)?' <span class="ovd-tag">⚠</span>':''}</td>
