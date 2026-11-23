@@ -241,6 +241,7 @@ textarea{resize:vertical;width:100%}
       <button class="hamb" id="hamb" type="button"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>
       <div class="ht"><h1 id="pTitle">Tổng quan báo cáo</h1><p id="pSub">Theo dõi hiệu suất triển khai add-on theo thời gian thực</p></div>
       <div class="spacer"></div>
+      <button class="theme-btn" id="refreshBtn" type="button">↻ Làm mới</button>
       <button class="theme-btn" id="themeBtn" type="button">◐ Giao diện</button>
     </header>
     <div class="pbody">
@@ -355,9 +356,12 @@ textarea{resize:vertical;width:100%}
 <script>
 "use strict";
 /* ============================================================
-   LƯU TRỮ — hiện dùng localStorage.
-   Thay bằng API backend MySQL/SQL Server tại loadData/saveData/loadConfig/saveConfig.
+   LƯU TRỮ — Google Sheet (Apps Script Web App) = KHO CHUNG;
+   localStorage = cache hiển thị tức thời + chạy khi mất mạng.
+   Đổi backend: chỉ cần thay API_URL.
    ============================================================ */
+const API_URL='https://script.google.com/macros/s/AKfycbww-zABax-Off-PbjSizZiqeT1gjiOy21CU_bHyDrLN0larRQR-ZXkU6jPF2YwP_A6uLw/exec';
+const USE_API=!!API_URL;
 const LS_DATA='addon_tickets_v3', LS_CFG='addon_config_v2', OVERDUE_HOURS=4;
 const STATUSES=['Mới tiếp nhận','Đang xử lý','Chờ khách/Đối tác','Hoàn thành','Hủy'];
 const OPEN_STATUSES=['Mới tiếp nhận','Đang xử lý','Chờ khách/Đối tác'];
@@ -375,19 +379,48 @@ const DEFAULT_CFG={
   pos:['POS PC 12.5 (2.2.1.9)','POS PC 2.2.1.8','FABi','TCH','Khác']
 };
 
-function loadData(){ // TODO: Gọi API backend tại đây — GET /api/addon-tickets
-  try{const r=localStorage.getItem(LS_DATA);if(r)return JSON.parse(r);}catch(e){}
-  const seed=seedData();saveData(seed);return seed;
+/* ---- API Google Sheet (POST dạng text/plain để tránh CORS preflight) ---- */
+async function apiGet(action){try{const r=await fetch(API_URL+'?action='+encodeURIComponent(action),{method:'GET'});return await r.json();}catch(e){return {ok:false,error:String(e)};}}
+async function apiPost(payload){try{const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(payload)});return await r.json();}catch(e){return {ok:false,error:String(e)};}}
+
+/* ---- Cache localStorage ---- */
+function cacheGet(k,f){try{const r=localStorage.getItem(k);return r?JSON.parse(r):f;}catch(e){return f;}}
+function cacheSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+function loadData(){
+  if(USE_API)return cacheGet(LS_DATA,[]);            // hiện cache trước; syncTickets() cập nhật từ kho chung
+  const c=cacheGet(LS_DATA,null); if(c)return c;
+  const seed=seedData();cacheSet(LS_DATA,seed);return seed;
 }
-function saveData(d){ // TODO: Gọi API backend tại đây — POST/PUT /api/addon-tickets
-  try{localStorage.setItem(LS_DATA,JSON.stringify(d));}catch(e){}
+function saveData(d){cacheSet(LS_DATA,d);}
+function loadConfig(){return Object.assign({},DEFAULT_CFG,cacheGet(LS_CFG,{}));}
+function saveConfig(c){cacheSet(LS_CFG,c);}
+
+/* ---- Đồng bộ với kho chung ---- */
+let syncing=false;
+async function syncTickets(){
+  if(!USE_API)return false;
+  const res=await apiGet('tickets');
+  if(res&&res.ok&&Array.isArray(res.tickets)){DATA=res.tickets;cacheSet(LS_DATA,DATA);return true;}
+  return false;
 }
-function loadConfig(){ // TODO: Gọi API backend tại đây — GET /api/addon-config
-  try{const r=localStorage.getItem(LS_CFG);if(r)return Object.assign({},DEFAULT_CFG,JSON.parse(r));}catch(e){}
-  return JSON.parse(JSON.stringify(DEFAULT_CFG));
+async function syncConfig(){
+  if(!USE_API)return false;
+  const res=await apiGet('config');
+  if(res&&res.ok&&res.config){
+    if(Object.keys(res.config).length){CFG=Object.assign({},DEFAULT_CFG,res.config);cacheSet(LS_CFG,CFG);}
+    else{apiPost({action:'config',config:CFG});}      // lần đầu: nạp danh mục mặc định lên kho chung
+  }
+  return true;
 }
-function saveConfig(c){ // TODO: Gọi API backend tại đây — POST/PUT /api/addon-config
-  try{localStorage.setItem(LS_CFG,JSON.stringify(c));}catch(e){}
+function saveTicket(t){cacheSet(LS_DATA,DATA);if(USE_API)apiPost({action:'update',ticket:t});}   // server upsert theo id
+function deleteTicketRemote(id){if(USE_API)apiPost({action:'delete',id:id});}
+function saveConfigRemote(){cacheSet(LS_CFG,CFG);if(USE_API)apiPost({action:'config',config:CFG});}
+function setSync(b){const el=$('#refreshBtn');if(el){el.textContent=b?'⟳ Đang đồng bộ…':'↻ Làm mới';el.disabled=b;}}
+async function refreshFromServer(){
+  if(!USE_API||syncing)return; syncing=true; setSync(true);
+  const ok=await syncTickets(); syncing=false; setSync(false);
+  if(ok){ if(curTab==='overview')renderOverview(); if(curTab==='list')renderList(); updateCounts(); }
 }
 
 function iso(h){return new Date(Date.now()-h*3600000).toISOString();}
@@ -427,9 +460,9 @@ function setTab(name){
   $('#pTitle').textContent=PAGE_META[name][0];
   $('#pSub').textContent=PAGE_META[name][1];
   closeSidebar();
-  if(name==='overview')renderOverview();
+  if(name==='overview'){renderOverview();refreshFromServer();}
   if(name==='new')refreshDatalists();
-  if(name==='list')renderList();
+  if(name==='list'){renderList();refreshFromServer();}
   if(name==='config')renderConfig();
 }
 $('#navSub').addEventListener('click',e=>{const b=e.target.closest('.nav-item');if(b)setTab(b.dataset.tab);});
@@ -565,8 +598,8 @@ $('#intakeForm').addEventListener('submit',e=>{
   const brand=$('#f_brand').value.trim(),cust=$('#f_customer').value.trim(),phone=$('#f_phone').value.trim();
   if(!brand||!cust||!phone){toast('Vui lòng nhập Mã TH, Tên quán và SĐT');return;}
   const cl=$('#f_created').value, status=$('#f_status').value;
-  DATA.push({id:$('#f_id').value,created_at:cl?new Date(cl).toISOString():new Date().toISOString(),brand_code:brand,pos_id:$('#f_posid').value.trim(),customer_name:cust,phone:phone,pos_system:$('#f_pos').value,addon_category:$('#f_cat').value,provider_or_device:$('#f_provider').value.trim(),support_type:supportType,technician:$('#f_tech').value,status:status,note:$('#f_note').value.trim(),completed_at:status==='Hoàn thành'?new Date().toISOString():null});
-  saveData(DATA); toast('Đã lưu phiếu '+$('#f_id').value); resetForm(); updateCounts(); setTab('list');
+  const t={id:$('#f_id').value,created_at:cl?new Date(cl).toISOString():new Date().toISOString(),brand_code:brand,pos_id:$('#f_posid').value.trim(),customer_name:cust,phone:phone,pos_system:$('#f_pos').value,addon_category:$('#f_cat').value,provider_or_device:$('#f_provider').value.trim(),support_type:supportType,technician:$('#f_tech').value,status:status,note:$('#f_note').value.trim(),completed_at:status==='Hoàn thành'?new Date().toISOString():null};
+  DATA.push(t); saveTicket(t); toast('Đã lưu phiếu '+t.id+(USE_API?' (đang đồng bộ…)':'')); resetForm(); updateCounts(); setTab('list');
 });
 
 /* ---------- LIST ---------- */
@@ -599,11 +632,11 @@ $('#listTable').addEventListener('change',e=>{
   const ns=sel.value;
   if(ns==='Hoàn thành'&&t.status!=='Hoàn thành')t.completed_at=new Date().toISOString();
   else if(ns!=='Hoàn thành')t.completed_at=null;
-  t.status=ns; saveData(DATA); toast('Đã cập nhật '+t.id+' → '+ns); renderList(); updateCounts();
+  t.status=ns; saveTicket(t); toast('Đã cập nhật '+t.id+' → '+ns); renderList(); updateCounts();
 });
 $('#listTable').addEventListener('click',e=>{
   const b=e.target.closest('[data-del]'); if(!b)return; const id=b.dataset.del;
-  if(b.dataset.confirm){DATA=DATA.filter(x=>x.id!==id);saveData(DATA);toast('Đã xóa '+id);renderList();updateCounts();return;}
+  if(b.dataset.confirm){DATA=DATA.filter(x=>x.id!==id);saveData(DATA);deleteTicketRemote(id);toast('Đã xóa '+id);renderList();updateCounts();return;}
   b.dataset.confirm='1';b.textContent='Chắc chắn?';setTimeout(()=>{if(b){b.dataset.confirm='';b.textContent='Xóa';}},2500);
 });
 $('#search').addEventListener('input',renderList);
@@ -619,9 +652,9 @@ $('#tab-config').addEventListener('click',e=>{
   const add=e.target.closest('[data-add]');
   if(add){const k=add.dataset.add,inp=$('#add'+k.charAt(0).toUpperCase()+k.slice(1)),v=inp.value.trim();
     if(!v)return; if(CFG[k].includes(v)){toast('Mục đã tồn tại');return;}
-    CFG[k].push(v);saveConfig(CFG);inp.value='';renderConfig();toast('Đã thêm "'+v+'"');return;}
+    CFG[k].push(v);saveConfigRemote();inp.value='';renderConfig();toast('Đã thêm "'+v+'"');return;}
   const x=e.target.closest('.x');
-  if(x){CFG[x.dataset.k].splice(+x.dataset.i,1);saveConfig(CFG);renderConfig();toast('Đã xóa');}
+  if(x){CFG[x.dataset.k].splice(+x.dataset.i,1);saveConfigRemote();renderConfig();toast('Đã xóa');}
 });
 $$('#tab-config input').forEach(inp=>inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.closest('.add-row').querySelector('[data-add]').click();}}));
 
@@ -635,6 +668,16 @@ $('#themeBtn').addEventListener('click',()=>{
 });
 function tickClock(){$('#slaClock').textContent=new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 tickClock(); setInterval(tickClock,30000);
+$('#refreshBtn').addEventListener('click',refreshFromServer);
 
 renderProviderTags(); resetForm(); updateCounts(); setTab('overview');
+
+/* Đồng bộ kho chung lúc mở + tự làm mới mỗi 45s khi ở Tổng quan / Danh sách */
+(async()=>{
+  if(!USE_API){$('#refreshBtn').hidden=true;return;}
+  setSync(true); await syncConfig(); await syncTickets(); setSync(false);
+  resetForm(); updateCounts();
+  if(curTab==='overview')renderOverview(); else if(curTab==='list')renderList(); else if(curTab==='config')renderConfig();
+})();
+setInterval(()=>{ if(USE_API&&!syncing&&(curTab==='overview'||curTab==='list'))refreshFromServer(); },45000);
 </script>
