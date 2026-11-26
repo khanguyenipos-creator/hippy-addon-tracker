@@ -255,7 +255,6 @@ body:not(.is-admin) .admin-only{display:none !important}
     <div class="login-err" id="lg_err" hidden></div>
     <button type="submit" class="login-btn" id="lg_btn">Đăng nhập</button>
     <div class="login-note">Hệ thống nội bộ · Report Team</div>
-    <div id="lg_conn" style="font-size:11px;text-align:center;min-height:15px;word-break:break-word;color:var(--muted)"></div>
   </form>
 </div>
 
@@ -868,19 +867,15 @@ $('#loginForm').addEventListener('submit',async function(e){
   if(!u||!p){lgErr('Vui lòng nhập tài khoản và mật khẩu.');return;}
   if(cap!==capCode){lgErr('Vui lòng nhập đúng mã xác nhận!');genCaptcha();$('#lg_cap').value='';return;}
   const btn=$('#lg_btn'); btn.disabled=true; btn.textContent='Đang kiểm tra…'; $('#lg_err').hidden=true;
-  let res;
-  try{ res=await api({action:'login',username:u,password:p},15000); }
-  catch(ex){ res={ok:false,error:'[A] Lỗi gọi máy chủ: '+(ex&&ex.message||ex)}; }
+  const res=await api({action:'login',username:u,password:p},15000);
   btn.disabled=false; btn.textContent='Đăng nhập';
   if(res&&res.ok){
-    try{
-      const usr=res.user||{};
-      currentUser={username:usr.username||u, full_name:usr.full_name||usr.fullname||u, role:(usr.role||res.role||'kt')};
-      try{sessionStorage.setItem(LS_USER,JSON.stringify(currentUser));}catch(e2){}
-      $('#lg_pass').value=''; startApp();
-    }catch(ex){ lgErr('[B] Server OK nhưng lỗi mở giao diện: '+(ex&&ex.message||ex)); }
+    const usr=res.user||{};
+    currentUser={username:usr.username||u, full_name:usr.full_name||usr.fullname||u, role:(usr.role||res.role||'kt')};
+    try{sessionStorage.setItem(LS_USER,JSON.stringify(currentUser));}catch(e2){}
+    $('#lg_pass').value=''; startApp();
   }else{
-    lgErr(res&&res.error?res.error:'[C] Đăng nhập thất bại.');
+    lgErr(res&&res.error?res.error:'Đăng nhập thất bại. Vui lòng thử lại.');
     genCaptcha(); $('#lg_cap').value='';
   }
 });
@@ -906,6 +901,6 @@ async function connTest(){
 (function initAuth(){
   let saved=null; try{saved=JSON.parse(sessionStorage.getItem(LS_USER)||'null');}catch(e){}
   if(saved&&saved.username){ currentUser=saved; startApp(); }
-  else{ genCaptcha(); connTest(); setTimeout(()=>{var el=$('#lg_user');el&&el.focus();},120); }
+  else{ genCaptcha(); setTimeout(()=>{var el=$('#lg_user');el&&el.focus();},120); }
 })();
 </script>
