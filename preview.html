@@ -241,6 +241,7 @@ textarea{resize:vertical;width:100%}
 .btn-accept{background:var(--good-weak);color:var(--good);border-color:transparent}
 .btn-accept:hover{background:var(--good-weak);color:var(--good);border-color:var(--good)}
 .sale-filter button[data-f="Chờ tiếp nhận"].sel{background:var(--warn)}
+.pyc-banner{background:var(--warn-weak);color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:10px 13px;font-size:12.5px;font-weight:600;margin-bottom:14px}
 
 /* role-based hiding */
 body:not(.is-admin) .admin-only{display:none !important}
@@ -420,6 +421,7 @@ body:not(.is-admin) .admin-only{display:none !important}
       <section id="tab-new" hidden>
         <div class="card">
           <div class="card-b">
+            <div id="pycBanner" class="pyc-banner" hidden></div>
             <form id="intakeForm">
               <div class="form-grid">
                 <div class="field"><label>Mã phiếu</label><input id="f_id" readonly><div class="hint">Tự sinh theo năm</div></div>
@@ -600,7 +602,7 @@ async function api(payload,timeoutMs){
 function cacheGet(k,f){try{const r=localStorage.getItem(k);return r?JSON.parse(r):f;}catch(e){return f;}}
 function cacheSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
-let currentUser=null, DATA=cacheGet(LS_DATA,[]), CFG=Object.assign({},DEFAULT_CFG,cacheGet(LS_CFG,{})), LOGS=[], SALES=[], saleFilter='Chờ tiếp nhận', rejTarget=null, curTab='overview', chartTech=null, chartCat=null, syncing=false;
+let currentUser=null, DATA=cacheGet(LS_DATA,[]), CFG=Object.assign({},DEFAULT_CFG,cacheGet(LS_CFG,{})), LOGS=[], SALES=[], saleFilter='Chờ tiếp nhận', rejTarget=null, pendingPYC=null, curTab='overview', chartTech=null, chartCat=null, syncing=false;
 function isAdmin(){return !!(currentUser&&currentUser.role==='admin');}
 
 /* ---- Đồng bộ từ Worker: {action:'all', actor} -> {tickets, config, logs} ---- */
@@ -663,7 +665,7 @@ function setTab(name){
   closeSidebar();
   if(name==='overview'){renderOverview();refreshFromServer();}
   else if(name==='detail'){renderDetail();refreshFromServer();}
-  else if(name==='new')refreshDatalists();
+  else if(name==='new'){refreshDatalists();showPycBanner();}
   else if(name==='list'){renderList();refreshFromServer();}
   else if(name==='sales'){renderSales();refreshFromServer();}
   else if(name==='config')renderConfig();
@@ -797,6 +799,7 @@ function resetForm(){
   supportType='Online'; $$('#segSupport button').forEach(b=>b.classList.toggle('sel',b.dataset.v==='Online'));
   $$('#providerTags .tag').forEach(t=>t.classList.remove('sel'));
   refreshDatalists();
+  if(typeof showPycBanner==='function')showPycBanner();
 }
 function renderProviderTags(){$('#providerTags').innerHTML=PROVIDER_TAGS.map(p=>`<button type="button" class="tag" data-p="${p}">${p}</button>`).join('');}
 $('#providerTags').addEventListener('click',e=>{const b=e.target.closest('.tag');if(!b)return;$('#f_provider').value=b.dataset.p;$$('#providerTags .tag').forEach(t=>t.classList.toggle('sel',t===b));});
@@ -839,7 +842,12 @@ $('#intakeForm').addEventListener('submit',e=>{
   if(!brand||!cust||!phone){toast('Vui lòng nhập Mã TH, Tên quán và SĐT');return;}
   const cl=$('#f_created').value, status=$('#f_status').value;
   const t={id:$('#f_id').value,created_at:cl?new Date(cl).toISOString():new Date().toISOString(),brand_code:brand,pos_id:$('#f_posid').value.trim(),customer_name:cust,phone:phone,pos_system:$('#f_pos').value,addon_category:$('#f_cat').value,provider_or_device:$('#f_provider').value.trim(),support_type:supportType,technician:$('#f_tech').value,status:status,note:$('#f_note').value.trim(),completed_at:status==='Hoàn thành'?new Date().toISOString():null};
-  DATA.push(t); saveTicket(t,'add'); toast('Đã lưu phiếu '+t.id+' (đang đồng bộ…)'); resetForm(); updateCounts(); setTab('list');
+  DATA.push(t); saveTicket(t,'add');
+  if(pendingPYC){ const pp=pendingPYC; pendingPYC=null;
+    api({action:'sale_action',row_index:pp.row,decision:'accept',actor:currentUser},15000).then(res=>{ if(res&&res.ok&&Array.isArray(res.sales)){SALES=res.sales;salesBadge();if(curTab==='sales')renderSales();} });
+    toast('Đã tạo phiếu '+t.id+' & tiếp nhận PYC #'+pp.ma);
+  } else { toast('Đã lưu phiếu '+t.id+' (đang đồng bộ…)'); }
+  resetForm(); updateCounts(); setTab('list');
 });
 
 /* ---------- LIST ---------- */
@@ -923,6 +931,11 @@ function sReason(x){return sPick(x,['ly_do','lyDo','reason','Lý Do']);}
 function sTime(x){return sPick(x,['updated_at','ngay_gio','ngayGio','datetime','timestamp','created_at','Ngày giờ']);}
 function sRow(x){return sPick(x,['row_index','rowIndex','row']);}
 function salesBadge(){const b=$('#salesBadge');if(b)b.textContent=SALES.filter(x=>sStatus(x)===SALE_PENDING).length;}
+function showPycBanner(){const b=$('#pycBanner');if(!b)return;
+  if(pendingPYC){ b.innerHTML='📋 Đang tạo phiếu cho <b>PYC #'+esc(pendingPYC.ma)+'</b> — điền thông tin quán rồi bấm <b>Lưu phiếu</b>. <span id="pycCancel" style="text-decoration:underline;cursor:pointer;margin-left:6px">Hủy</span>'; b.hidden=false; }
+  else b.hidden=true;
+}
+document.addEventListener('click',e=>{ if(e.target&&e.target.id==='pycCancel'){ pendingPYC=null; showPycBanner(); toast('Đã hủy tạo phiếu từ PYC.'); } });
 function renderSales(){
   const q=$('#saleSearch').value.trim().toLowerCase();
   let rows=SALES.filter(x=>{
@@ -954,10 +967,12 @@ $('#saleTable').addEventListener('click',async e=>{
   const acc=e.target.closest('.sale-accept'), rej=e.target.closest('.sale-reject');
   if(acc){
     const row=acc.dataset.row, ma=acc.dataset.ma;
-    acc.disabled=true; acc.textContent='Đang gửi…';
-    const res=await api({action:'sale_action',row_index:(isNaN(+row)?row:+row),decision:'accept',actor:currentUser},15000);
-    if(res&&res.ok){ if(Array.isArray(res.sales))SALES=res.sales; if(Array.isArray(res.tickets)){DATA=res.tickets;cacheSet(LS_DATA,DATA);} toast('Đã tiếp nhận PYC #'+ma); renderSales(); salesBadge(); updateCounts(); }
-    else{ toast(res&&res.error?res.error:'Lỗi tiếp nhận, thử lại.'); acc.disabled=false; acc.textContent='Tiếp Nhận'; }
+    pendingPYC={row:(isNaN(+row)?row:+row), ma:ma};
+    setTab('new'); resetForm();
+    $('#f_note').value='Tiếp nhận từ PYC: '+ma;
+    setSelIfOpt('#f_tech', currentUser&&currentUser.full_name);
+    showPycBanner();
+    toast('Đang tạo phiếu cho PYC #'+ma+' — điền thông tin quán rồi bấm Lưu.');
     return;
   }
   if(rej){ openRejModal(rej.dataset.row, rej.dataset.ma); }
