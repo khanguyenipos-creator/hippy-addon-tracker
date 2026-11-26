@@ -568,7 +568,7 @@ body:not(.is-admin) .admin-only{display:none !important}
    Không chứa api_key trong trình duyệt. Xác thực & phân quyền ở server.
    ============================================================ */
 const API_URL='https://hippy-api-proxy.khanguyen-ipos.workers.dev/';
-const LS_DATA='addon_tickets_v3', LS_CFG='addon_config_v2', LS_USER='rt_user', OVERDUE_HOURS=4;
+const LS_DATA='addon_tickets_v3', LS_CFG='addon_config_v2', LS_USER='rt_user', LS_TOKEN='hippy_token', OVERDUE_HOURS=4;
 const STATUSES=['Mới tiếp nhận','Đang xử lý','Chờ khách/Đối tác','Hoàn thành','Hủy'];
 const OPEN_STATUSES=['Mới tiếp nhận','Đang xử lý','Chờ khách/Đối tác'];
 const PROVIDER_TAGS=['IPOSINVOICE','VNPT','BKAV','M-invoice','Me-invoice','MoMo EDC','iHub','iTP3350','VNPay QR'];
@@ -591,9 +591,24 @@ const DEFAULT_CFG={
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 
 /* ---- API Worker: tất cả POST application/json ---- */
+let loggingOut=false;
+function getToken(){try{return sessionStorage.getItem(LS_TOKEN)||'';}catch(e){return '';}}
+function forceLogout(){
+  if(loggingOut)return; loggingOut=true;
+  try{sessionStorage.removeItem(LS_TOKEN);sessionStorage.removeItem(LS_USER);}catch(e){}
+  try{toast('Phiên đăng nhập đã hết hạn — vui lòng đăng nhập lại.');}catch(e){}
+  setTimeout(function(){location.reload();},1000);
+}
 async function api(payload,timeoutMs){
+  const data=Object.assign({},payload); const tok=getToken(); if(tok)data.token=tok;   // đính token vào mọi request
   const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),timeoutMs||25000);
-  try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:ctrl.signal});clearTimeout(to);return await r.json();}
+  try{
+    const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),signal:ctrl.signal});
+    clearTimeout(to);
+    const j=await r.json();
+    if(j&&j.ok===false&&typeof j.error==='string'&&(j.error.indexOf('401')>=0||/session expired/i.test(j.error))){ forceLogout(); }  // token hết hạn → về đăng nhập
+    return j;
+  }
   catch(e){clearTimeout(to);
     const slow=(e&&e.name==='AbortError');
     return {ok:false,error:slow?'Máy chủ phản hồi quá lâu (mạng chậm hoặc Worker bận). Vui lòng thử lại.':'Không kết nối được máy chủ — có thể mạng đang chặn. Thử mạng khác (4G).'};}
@@ -1052,14 +1067,20 @@ $('#loginForm').addEventListener('submit',async function(e){
   if(res&&res.ok){
     const usr=res.user||{};
     currentUser={username:usr.username||u, full_name:usr.full_name||usr.fullname||u, role:(usr.role||res.role||'kt')};
-    try{sessionStorage.setItem(LS_USER,JSON.stringify(currentUser));}catch(e2){}
+    try{ if(res.token)sessionStorage.setItem(LS_TOKEN,res.token); sessionStorage.setItem(LS_USER,JSON.stringify(currentUser)); }catch(e2){}
+    loggingOut=false;
     $('#lg_pass').value=''; startApp();
   }else{
     lgErr(res&&res.error?res.error:'Đăng nhập thất bại. Vui lòng thử lại.');
     genCaptcha(); $('#lg_cap').value='';
   }
 });
-$('#logoutBtn').addEventListener('click',function(){try{sessionStorage.removeItem(LS_USER);}catch(e){} location.reload();});
+$('#logoutBtn').addEventListener('click',async function(){
+  const tok=getToken();
+  if(tok){ try{ await api({action:'logout'},8000); }catch(e){} }   // hủy token trên server trước
+  try{sessionStorage.removeItem(LS_TOKEN);sessionStorage.removeItem(LS_USER);}catch(e){}
+  location.reload();
+});
 
 /* ===== ĐỔI MẬT KHẨU ===== */
 function pwErr(m){const e=$('#pw_err');e.textContent=m;e.hidden=false;}
