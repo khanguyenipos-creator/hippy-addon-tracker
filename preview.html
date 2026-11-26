@@ -528,9 +528,12 @@ function saveTicket(t,act){cacheSet(LS_DATA,DATA);api({action:act||'update',tick
 function deleteTicketRemote(id){api({action:'delete',id:id,actor:currentUser});}
 function saveConfigRemote(){cacheSet(LS_CFG,CFG);api({action:'config',config:CFG,actor:currentUser});}
 function setSync(b){const el=$('#refreshBtn');if(el){el.textContent=b?'⟳ Đang đồng bộ…':'↻ Làm mới';el.disabled=b;}}
-async function refreshFromServer(){
-  if(syncing)return; syncing=true; setSync(true);
-  const ok=await syncAll(); syncing=false; setSync(false);
+let lastSyncTs=0;
+async function refreshFromServer(force){
+  if(syncing)return;
+  if(!force && Date.now()-lastSyncTs<25000) return;   // chống gọi server quá dày (giảm tải GAS)
+  syncing=true; setSync(true);
+  const ok=await syncAll(); lastSyncTs=Date.now(); syncing=false; setSync(false);
   if(ok){ renderCurrent(); updateCounts(); }
 }
 function renderCurrent(){
@@ -825,7 +828,7 @@ $('#themeBtn').addEventListener('click',()=>{
 });
 function tickClock(){$('#slaClock').textContent=new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 tickClock(); setInterval(tickClock,30000);
-$('#refreshBtn').addEventListener('click',refreshFromServer);
+$('#refreshBtn').addEventListener('click',()=>refreshFromServer(true));
 
 /* ===== ĐĂNG NHẬP / PHÂN QUYỀN ===== */
 function applyUserUI(){
@@ -842,9 +845,9 @@ function startApp(){
   $('#loginGate').hidden=true; $('#app').hidden=false;
   if(appStarted){ setTab('overview'); return; }
   appStarted=true;
-  renderProviderTags(); resetForm(); updateCounts(); setTab('overview');
-  (async()=>{ setSync(true); const ok=await syncAll(); setSync(false); if(ok){resetForm();updateCounts();renderCurrent();} })();
-  setInterval(()=>{ if(!syncing&&['overview','detail','list','audit'].includes(curTab))refreshFromServer(); },45000);
+  renderProviderTags(); resetForm(); updateCounts(); lastSyncTs=Date.now(); setTab('overview');
+  (async()=>{ setSync(true); const ok=await syncAll(); lastSyncTs=Date.now(); setSync(false); if(ok){resetForm();updateCounts();renderCurrent();} })();
+  setInterval(()=>{ if(!syncing&&['overview','detail','list','audit'].includes(curTab))refreshFromServer(); },120000);
 }
 function lgErr(m){const e=$('#lg_err');e.textContent=m;e.hidden=false;}
 /* ---- Mã xác nhận (captcha) client-side ---- */
