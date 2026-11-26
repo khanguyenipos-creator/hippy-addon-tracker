@@ -468,14 +468,7 @@ body:not(.is-admin) .admin-only{display:none !important}
       <!-- ===== SALES / CHỜ TIẾP NHẬN ===== -->
       <section id="tab-sales" hidden>
         <div class="card">
-          <div class="card-h" style="gap:10px">
-            <div class="seg sale-filter" id="saleFilter">
-              <button type="button" data-f="Chờ tiếp nhận" class="sel">Chờ tiếp nhận</button>
-              <button type="button" data-f="Đã tiếp nhận">Đã tiếp nhận</button>
-              <button type="button" data-f="Từ chối">Từ chối</button>
-              <button type="button" data-f="">Tất cả</button>
-            </div>
-            <input id="saleSearch" placeholder="🔍 Tìm Mã PYC" style="flex:1;min-width:160px">
+          <div class="card-h">
             <span class="count-note" id="saleCount"></span>
           </div>
           <div class="tbl-scroll">
@@ -952,32 +945,22 @@ function showPycBanner(){const b=$('#pycBanner');if(!b)return;
 }
 document.addEventListener('click',e=>{ if(e.target&&e.target.id==='pycCancel'){ pendingPYC=null; showPycBanner(); toast('Đã hủy tạo phiếu từ PYC.'); } });
 function renderSales(){
-  const q=$('#saleSearch').value.trim().toLowerCase();
-  let rows=SALES.filter(x=>{
-    if(saleFilter && sStatus(x)!==saleFilter)return false;
-    if(q && !String(sMa(x)).toLowerCase().includes(q))return false;
-    return true;
-  });
-  $('#saleCount').textContent=rows.length+' PYC';
+  // Chỉ hiện PYC đang chờ tiếp nhận — nhận/từ chối xong là dòng tự biến mất
+  let rows=SALES.filter(x=>sStatus(x)===SALE_PENDING);
+  const cnt=$('#saleCount'); if(cnt)cnt.textContent=rows.length+' PYC đang chờ';
   $('#saleTable tbody').innerHTML=rows.length?rows.map(x=>{
-    const st=sStatus(x);
-    const cls=st===SALE_ACCEPTED?'accepted':(st===SALE_REJECTED?'rejected':'pending');
     const r=sRow(x), ma=sMa(x);
-    const act=(st===SALE_PENDING)
-      ? `<button class="btn btn-sm btn-accept sale-accept" data-row="${esc(r)}" data-ma="${esc(ma)}" type="button">Tiếp Nhận</button> <button class="btn btn-sm btn-danger sale-reject" data-row="${esc(r)}" data-ma="${esc(ma)}" type="button">Từ Chối</button>`
-      : `<span class="muted">Đã khóa</span>`;
+    const act=`<button class="btn btn-sm btn-accept sale-accept" data-row="${esc(r)}" data-ma="${esc(ma)}" type="button">Tiếp Nhận</button> <button class="btn btn-sm btn-danger sale-reject" data-row="${esc(r)}" data-ma="${esc(ma)}" type="button">Từ Chối</button>`;
     return `<tr>
       <td class="mono c-main">${esc(ma)||'—'}</td>
       <td>${esc(sReceiver(x))||'—'}</td>
-      <td><span class="sale-chip ${cls}">${esc(st)||'—'}</span></td>
+      <td><span class="sale-chip pending">${esc(sStatus(x))||'—'}</span></td>
       <td>${esc(sReason(x))||'—'}</td>
       <td class="c-sub">${esc(sTime(x))||'—'}</td>
       <td style="white-space:nowrap">${act}</td>
     </tr>`;
-  }).join(''):`<tr><td colspan="6"><div class="empty">Không có PYC nào trong mục này.</div></td></tr>`;
+  }).join(''):`<tr><td colspan="6"><div class="empty">Không có PYC nào đang chờ tiếp nhận.</div></td></tr>`;
 }
-$('#saleFilter').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;saleFilter=b.dataset.f;$$('#saleFilter button').forEach(x=>x.classList.toggle('sel',x===b));renderSales();});
-$('#saleSearch').addEventListener('input',renderSales);
 $('#saleTable').addEventListener('click',async e=>{
   const acc=e.target.closest('.sale-accept'), rej=e.target.closest('.sale-reject');
   if(acc){
