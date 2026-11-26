@@ -254,6 +254,7 @@ body:not(.is-admin) .admin-only{display:none !important}
     <div class="login-err" id="lg_err" hidden></div>
     <button type="submit" class="login-btn" id="lg_btn">Đăng nhập</button>
     <div class="login-note">Hệ thống nội bộ · Report Team</div>
+    <div id="lg_conn" style="font-size:11px;text-align:center;min-height:15px;word-break:break-word;color:var(--muted)"></div>
   </form>
 </div>
 
@@ -885,9 +886,25 @@ $('#loginForm').addEventListener('submit',async function(e){
 $('#logoutBtn').addEventListener('click',function(){try{sessionStorage.removeItem(LS_USER);}catch(e){} location.reload();});
 
 /* Khởi động: nếu đã đăng nhập trong phiên thì vào thẳng */
+async function connTest(){
+  const el=$('#lg_conn'); if(!el)return;
+  el.textContent='⏳ Đang kiểm tra kết nối máy chủ…'; el.style.color='var(--muted)';
+  const t0=Date.now();
+  try{
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
+    const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',username:'__conntest__',password:'x'}),signal:ctrl.signal});
+    clearTimeout(to);
+    await r.text();
+    el.textContent='✓ Kết nối máy chủ OK — '+(Date.now()-t0)+'ms (HTTP '+r.status+')';
+    el.style.color='#15a06b';
+  }catch(ex){
+    el.textContent='✗ KHÔNG nhận được phản hồi ('+(Date.now()-t0)+'ms): '+((ex&&ex.name)||'')+' '+((ex&&ex.message)||ex);
+    el.style.color='#d83a30';
+  }
+}
 (function initAuth(){
   let saved=null; try{saved=JSON.parse(sessionStorage.getItem(LS_USER)||'null');}catch(e){}
   if(saved&&saved.username){ currentUser=saved; startApp(); }
-  else{ genCaptcha(); setTimeout(()=>{var el=$('#lg_user');el&&el.focus();},120); }
+  else{ genCaptcha(); connTest(); setTimeout(()=>{var el=$('#lg_user');el&&el.focus();},120); }
 })();
 </script>
