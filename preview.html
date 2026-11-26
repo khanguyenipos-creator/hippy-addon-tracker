@@ -497,9 +497,12 @@ const DEFAULT_CFG={
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 
 /* ---- API Worker: tất cả POST application/json ---- */
-async function api(payload){
-  try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});return await r.json();}
-  catch(e){return {ok:false,error:'Không kết nối được máy chủ. Kiểm tra mạng.'};}
+async function api(payload,timeoutMs){
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),timeoutMs||25000);
+  try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:ctrl.signal});clearTimeout(to);return await r.json();}
+  catch(e){clearTimeout(to);
+    const slow=(e&&e.name==='AbortError');
+    return {ok:false,error:slow?'Máy chủ phản hồi quá lâu (mạng chậm hoặc Worker bận). Vui lòng thử lại.':'Không kết nối được máy chủ — có thể mạng đang chặn. Thử mạng khác (4G).'};}
 }
 /* ---- Cache localStorage (hiển thị tức thời) ---- */
 function cacheGet(k,f){try{const r=localStorage.getItem(k);return r?JSON.parse(r):f;}catch(e){return f;}}
