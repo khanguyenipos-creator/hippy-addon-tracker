@@ -219,6 +219,18 @@ textarea{resize:vertical;width:100%}
 #capCanvas{border:1px solid var(--border);border-radius:8px;cursor:pointer;flex:0 0 auto}
 .cap-reload{border:1px solid var(--border);background:var(--panel-2);color:var(--fg);border-radius:8px;width:40px;height:44px;cursor:pointer;font-size:18px;flex:0 0 auto}
 .cap-reload:hover{border-color:var(--accent);color:var(--accent)}
+.pw-btn{width:100%;border:1px solid var(--border);background:var(--panel-2);color:var(--fg);border-radius:8px;padding:8px;cursor:pointer;font-weight:600;font-size:12px;display:flex;align-items:center;justify-content:center;gap:7px}
+.pw-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ---------- modal đổi mật khẩu ---------- */
+.modal-overlay{position:fixed;inset:0;z-index:110;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:20px}
+.modal-card{width:min(400px,100%);background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;display:flex;flex-direction:column;gap:13px}
+.modal-head{display:flex;align-items:center;gap:10px}
+.modal-head h2{font-size:17px;flex:1}
+.modal-x{border:0;background:none;color:var(--muted);font-size:22px;line-height:1;cursor:pointer}
+.modal-x:hover{color:var(--crit)}
+.modal-user{font-size:12.5px;color:var(--muted);background:var(--panel-2);border-radius:8px;padding:9px 11px}
+.modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:4px}
 
 /* role-based hiding */
 body:not(.is-admin) .admin-only{display:none !important}
@@ -307,6 +319,7 @@ body:not(.is-admin) .admin-only{display:none !important}
         <div class="user-meta"><div class="user-name" id="userName">—</div><div><span class="role-chip" id="userRole">KT</span></div></div>
         <button class="logout-mini" id="logoutBtn" type="button" title="Đăng xuất">⎋</button>
       </div>
+      <button class="pw-btn" id="pwBtn" type="button">🔑 Đổi mật khẩu</button>
       <div class="sla-line">Mốc đối chiếu SLA: <b id="slaClock">—</b></div>
     </div>
   </aside>
@@ -465,6 +478,22 @@ body:not(.is-admin) .admin-only{display:none !important}
   </section>
 </div>
 <div class="backdrop" id="backdrop"></div>
+
+<!-- ===== MODAL ĐỔI MẬT KHẨU ===== -->
+<div class="modal-overlay" id="pwModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><h2>Đổi mật khẩu</h2><button class="modal-x" id="pwClose" type="button" title="Đóng">×</button></div>
+    <div class="modal-user" id="pwUser"></div>
+    <div class="login-field"><label>Mật khẩu hiện tại</label><input id="pw_old" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại"></div>
+    <div class="login-field"><label>Mật khẩu mới</label><input id="pw_new" type="password" autocomplete="new-password" placeholder="Ít nhất 3 ký tự"></div>
+    <div class="login-field"><label>Nhập lại mật khẩu mới</label><input id="pw_new2" type="password" autocomplete="new-password" placeholder="Gõ lại mật khẩu mới"></div>
+    <div class="login-err" id="pw_err" hidden></div>
+    <div class="modal-foot">
+      <button class="btn" id="pwCancel" type="button">Hủy</button>
+      <button class="btn btn-primary" id="pwSave" type="button">Lưu mật khẩu mới</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -880,6 +909,38 @@ $('#loginForm').addEventListener('submit',async function(e){
   }
 });
 $('#logoutBtn').addEventListener('click',function(){try{sessionStorage.removeItem(LS_USER);}catch(e){} location.reload();});
+
+/* ===== ĐỔI MẬT KHẨU ===== */
+function pwErr(m){const e=$('#pw_err');e.textContent=m;e.hidden=false;}
+function openPwModal(){
+  if(!currentUser)return;
+  $('#pwUser').innerHTML='Tài khoản: <b>'+esc(currentUser.username)+'</b>'+(currentUser.full_name?' — '+esc(currentUser.full_name):'');
+  $('#pw_old').value=''; $('#pw_new').value=''; $('#pw_new2').value=''; $('#pw_err').hidden=true;
+  $('#pwModal').hidden=false; setTimeout(()=>{var el=$('#pw_old');el&&el.focus();},50);
+}
+function closePwModal(){ $('#pwModal').hidden=true; }
+$('#pwBtn').addEventListener('click',openPwModal);
+$('#pwClose').addEventListener('click',closePwModal);
+$('#pwCancel').addEventListener('click',closePwModal);
+$('#pwModal').addEventListener('click',e=>{ if(e.target===$('#pwModal'))closePwModal(); });
+$('#pwSave').addEventListener('click',async function(){
+  const o=$('#pw_old').value, n=$('#pw_new').value, n2=$('#pw_new2').value;
+  if(!o||!n||!n2){pwErr('Vui lòng nhập đầy đủ 3 ô.');return;}
+  if(n.length<3){pwErr('Mật khẩu mới phải từ 3 ký tự trở lên.');return;}
+  if(n!==n2){pwErr('Mật khẩu nhập lại không khớp.');return;}
+  if(n===o){pwErr('Mật khẩu mới phải khác mật khẩu cũ.');return;}
+  const btn=$('#pwSave'); btn.disabled=true; btn.textContent='Đang lưu…'; $('#pw_err').hidden=true;
+  const res=await api({action:'change_password',username:currentUser.username,old_password:o,new_password:n},15000);
+  btn.disabled=false; btn.textContent='Lưu mật khẩu mới';
+  if(res&&res.ok){
+    closePwModal();
+    toast('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.');
+    try{sessionStorage.removeItem(LS_USER);}catch(e){}
+    setTimeout(()=>location.reload(),1300);
+  }else{
+    pwErr(res&&res.error?res.error:'Đổi mật khẩu thất bại. Vui lòng thử lại.');
+  }
+});
 
 /* Khởi động: nếu đã đăng nhập trong phiên thì vào thẳng */
 async function connTest(){
