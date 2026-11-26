@@ -956,7 +956,7 @@ $('#saleTable').addEventListener('click',async e=>{
     const row=acc.dataset.row, ma=acc.dataset.ma;
     acc.disabled=true; acc.textContent='Đang gửi…';
     const res=await api({action:'sale_action',row_index:(isNaN(+row)?row:+row),decision:'accept',actor:currentUser},15000);
-    if(res&&res.ok){ if(Array.isArray(res.sales))SALES=res.sales; toast('Đã tiếp nhận PYC #'+ma); renderSales(); salesBadge(); }
+    if(res&&res.ok){ if(Array.isArray(res.sales))SALES=res.sales; if(Array.isArray(res.tickets)){DATA=res.tickets;cacheSet(LS_DATA,DATA);} toast('Đã tiếp nhận PYC #'+ma); renderSales(); salesBadge(); updateCounts(); }
     else{ toast(res&&res.error?res.error:'Lỗi tiếp nhận, thử lại.'); acc.disabled=false; acc.textContent='Tiếp Nhận'; }
     return;
   }
