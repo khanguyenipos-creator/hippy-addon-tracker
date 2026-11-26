@@ -916,11 +916,11 @@ function renderAudit(){
 /* ---------- SALES / CHỜ TIẾP NHẬN ---------- */
 const SALE_PENDING='Chờ tiếp nhận', SALE_ACCEPTED='Đã tiếp nhận', SALE_REJECTED='Từ chối';
 function sPick(x,keys){for(var i=0;i<keys.length;i++){if(x&&x[keys[i]]!=null&&x[keys[i]]!=='')return x[keys[i]];}return '';}
-function sMa(x){return sPick(x,['ma_pyc','maPYC','ma','id','Mã PYC']);}
+function sMa(x){return sPick(x,['pyc_code','ma_pyc','maPYC','ma','id','Mã PYC']);}
 function sReceiver(x){return sPick(x,['nguoi_tiep_nhan','nguoiTiepNhan','receiver','handler','Người Tiếp Nhận']);}
 function sStatus(x){return String(sPick(x,['trang_thai','trangThai','status','Trạng Thái'])).trim();}
 function sReason(x){return sPick(x,['ly_do','lyDo','reason','Lý Do']);}
-function sTime(x){return sPick(x,['ngay_gio','ngayGio','datetime','timestamp','created_at','Ngày giờ']);}
+function sTime(x){return sPick(x,['updated_at','ngay_gio','ngayGio','datetime','timestamp','created_at','Ngày giờ']);}
 function sRow(x){return sPick(x,['row_index','rowIndex','row']);}
 function salesBadge(){const b=$('#salesBadge');if(b)b.textContent=SALES.filter(x=>sStatus(x)===SALE_PENDING).length;}
 function renderSales(){

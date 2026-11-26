@@ -232,6 +232,16 @@ textarea{resize:vertical;width:100%}
 .modal-user{font-size:12.5px;color:var(--muted);background:var(--panel-2);border-radius:8px;padding:9px 11px}
 .modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:4px}
 
+/* ---------- chờ tiếp nhận (sales) ---------- */
+.badge-warn{background:var(--warn)!important;color:#1b1b1b!important}
+.sale-chip{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:4px 11px;font-size:11.5px;font-weight:600}
+.sale-chip.pending{background:var(--warn-weak);color:var(--warn)}
+.sale-chip.accepted{background:var(--good-weak);color:var(--good)}
+.sale-chip.rejected{background:var(--crit-weak);color:var(--crit)}
+.btn-accept{background:var(--good-weak);color:var(--good);border-color:transparent}
+.btn-accept:hover{background:var(--good-weak);color:var(--good);border-color:var(--good)}
+.sale-filter button[data-f="Chờ tiếp nhận"].sel{background:var(--warn)}
+
 /* role-based hiding */
 body:not(.is-admin) .admin-only{display:none !important}
 
@@ -301,6 +311,11 @@ body:not(.is-admin) .admin-only{display:none !important}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>
             <span>Danh sách theo dõi</span>
             <span class="badge" id="listBadge">0</span>
+          </div>
+          <div class="nav-item" data-tab="sales">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+            <span>Chờ tiếp nhận</span>
+            <span class="badge badge-warn" id="salesBadge">0</span>
           </div>
           <div class="nav-item admin-only" data-tab="config">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -448,6 +463,28 @@ body:not(.is-admin) .admin-only{display:none !important}
         </div>
       </section>
 
+      <!-- ===== SALES / CHỜ TIẾP NHẬN ===== -->
+      <section id="tab-sales" hidden>
+        <div class="card">
+          <div class="card-h" style="gap:10px">
+            <div class="seg sale-filter" id="saleFilter">
+              <button type="button" data-f="Chờ tiếp nhận" class="sel">Chờ tiếp nhận</button>
+              <button type="button" data-f="Đã tiếp nhận">Đã tiếp nhận</button>
+              <button type="button" data-f="Từ chối">Từ chối</button>
+              <button type="button" data-f="">Tất cả</button>
+            </div>
+            <input id="saleSearch" placeholder="🔍 Tìm Mã PYC" style="flex:1;min-width:160px">
+            <span class="count-note" id="saleCount"></span>
+          </div>
+          <div class="tbl-scroll">
+            <table id="saleTable">
+              <thead><tr><th>Mã PYC</th><th>Người Tiếp Nhận</th><th>Trạng Thái</th><th>Lý Do</th><th>Ngày giờ</th><th>Thao tác</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- ===== CONFIG (admin) ===== -->
       <section id="tab-config" hidden>
         <div class="card">
@@ -494,6 +531,30 @@ body:not(.is-admin) .admin-only{display:none !important}
     </div>
   </div>
 </div>
+
+<!-- ===== MODAL TỪ CHỐI PYC ===== -->
+<div class="modal-overlay" id="rejModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><h2>Từ chối PYC</h2><button class="modal-x" id="rejClose" type="button" title="Đóng">×</button></div>
+    <div class="modal-user" id="rejInfo"></div>
+    <div class="login-field"><label>Lý do từ chối</label>
+      <select id="rejReason">
+        <option>Thiếu thông tin liên hệ / SĐT không liên lạc được</option>
+        <option>Chưa hoàn tất thanh toán / Chưa đủ điều kiện triển khai</option>
+        <option>Trùng mã PYC đã tạo trước đó</option>
+        <option>Sai thông tin gói Add-on / Sai hệ thống POS</option>
+        <option>Khách hàng hẹn lại thời gian triển khai</option>
+        <option value="__other__">Lý do khác (Tự nhập chi tiết)</option>
+      </select>
+    </div>
+    <div class="login-field" id="rejOtherWrap" hidden><label>Nhập lý do cụ thể</label><input id="rejOther" placeholder="Gõ lý do từ chối..."></div>
+    <div class="login-err" id="rej_err" hidden></div>
+    <div class="modal-foot">
+      <button class="btn" id="rejCancel" type="button">Hủy</button>
+      <button class="btn btn-danger" id="rejConfirm" type="button">Xác nhận từ chối</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -515,6 +576,7 @@ const PAGE_META={
   detail:['Báo cáo chi tiết','Lọc sâu theo ngày, KT, nhóm, nhà cung cấp, hình thức'],
   new:['Tiếp nhận phiếu mới','Tạo phiếu triển khai — lưu xong tự chuyển sang danh sách theo dõi'],
   list:['Danh sách phiếu theo dõi','Đổi trạng thái trực tiếp để tự động chốt thời điểm hoàn tất'],
+  sales:['Chờ tiếp nhận','Duyệt các phiếu yêu cầu (PYC) — Tiếp nhận hoặc Từ chối'],
   config:['Cấu hình danh mục','Thêm/xóa danh mục — đồng bộ ngay với form tiếp nhận'],
   audit:['Nhật ký thao tác','Toàn bộ lịch sử thao tác của người dùng trên hệ thống']
 };
@@ -538,7 +600,7 @@ async function api(payload,timeoutMs){
 function cacheGet(k,f){try{const r=localStorage.getItem(k);return r?JSON.parse(r):f;}catch(e){return f;}}
 function cacheSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
-let currentUser=null, DATA=cacheGet(LS_DATA,[]), CFG=Object.assign({},DEFAULT_CFG,cacheGet(LS_CFG,{})), LOGS=[], curTab='overview', chartTech=null, chartCat=null, syncing=false;
+let currentUser=null, DATA=cacheGet(LS_DATA,[]), CFG=Object.assign({},DEFAULT_CFG,cacheGet(LS_CFG,{})), LOGS=[], SALES=[], saleFilter='Chờ tiếp nhận', rejTarget=null, curTab='overview', chartTech=null, chartCat=null, syncing=false;
 function isAdmin(){return !!(currentUser&&currentUser.role==='admin');}
 
 /* ---- Đồng bộ từ Worker: {action:'all', actor} -> {tickets, config, logs} ---- */
@@ -548,7 +610,8 @@ async function syncAll(){
     DATA=Array.isArray(res.tickets)?res.tickets:[];
     if(res.config&&Object.keys(res.config).length)CFG=Object.assign({},DEFAULT_CFG,res.config);
     LOGS=Array.isArray(res.logs)?res.logs:[];
-    cacheSet(LS_DATA,DATA); cacheSet(LS_CFG,CFG);
+    SALES=Array.isArray(res.sales)?res.sales:[];
+    cacheSet(LS_DATA,DATA); cacheSet(LS_CFG,CFG); salesBadge();
     return true;
   }
   return false;
@@ -570,6 +633,7 @@ function renderCurrent(){
   if(curTab==='overview')renderOverview();
   else if(curTab==='detail')renderDetail();
   else if(curTab==='list')renderList();
+  else if(curTab==='sales')renderSales();
   else if(curTab==='config')renderConfig();
   else if(curTab==='audit')renderAudit();
 }
@@ -593,7 +657,7 @@ function setTab(name){
   if((name==='config'||name==='audit')&&!isAdmin())name='overview';
   curTab=name;
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
-  ['overview','detail','new','list','config','audit'].forEach(n=>{$('#tab-'+n).hidden=(n!==name);});
+  ['overview','detail','new','list','sales','config','audit'].forEach(n=>{$('#tab-'+n).hidden=(n!==name);});
   $('#pTitle').textContent=PAGE_META[name][0];
   $('#pSub').textContent=PAGE_META[name][1];
   closeSidebar();
@@ -601,6 +665,7 @@ function setTab(name){
   else if(name==='detail'){renderDetail();refreshFromServer();}
   else if(name==='new')refreshDatalists();
   else if(name==='list'){renderList();refreshFromServer();}
+  else if(name==='sales'){renderSales();refreshFromServer();}
   else if(name==='config')renderConfig();
   else if(name==='audit'){renderAudit();refreshFromServer();}
 }
@@ -848,8 +913,79 @@ function renderAudit(){
     </tr>`).join(''):`<tr><td colspan="5"><div class="empty">Chưa có nhật ký.</div></td></tr>`;
 }
 
+/* ---------- SALES / CHỜ TIẾP NHẬN ---------- */
+const SALE_PENDING='Chờ tiếp nhận', SALE_ACCEPTED='Đã tiếp nhận', SALE_REJECTED='Từ chối';
+function sPick(x,keys){for(var i=0;i<keys.length;i++){if(x&&x[keys[i]]!=null&&x[keys[i]]!=='')return x[keys[i]];}return '';}
+function sMa(x){return sPick(x,['pyc_code','ma_pyc','maPYC','ma','id','Mã PYC']);}
+function sReceiver(x){return sPick(x,['nguoi_tiep_nhan','nguoiTiepNhan','receiver','handler','Người Tiếp Nhận']);}
+function sStatus(x){return String(sPick(x,['trang_thai','trangThai','status','Trạng Thái'])).trim();}
+function sReason(x){return sPick(x,['ly_do','lyDo','reason','Lý Do']);}
+function sTime(x){return sPick(x,['updated_at','ngay_gio','ngayGio','datetime','timestamp','created_at','Ngày giờ']);}
+function sRow(x){return sPick(x,['row_index','rowIndex','row']);}
+function salesBadge(){const b=$('#salesBadge');if(b)b.textContent=SALES.filter(x=>sStatus(x)===SALE_PENDING).length;}
+function renderSales(){
+  const q=$('#saleSearch').value.trim().toLowerCase();
+  let rows=SALES.filter(x=>{
+    if(saleFilter && sStatus(x)!==saleFilter)return false;
+    if(q && !String(sMa(x)).toLowerCase().includes(q))return false;
+    return true;
+  });
+  $('#saleCount').textContent=rows.length+' PYC';
+  $('#saleTable tbody').innerHTML=rows.length?rows.map(x=>{
+    const st=sStatus(x);
+    const cls=st===SALE_ACCEPTED?'accepted':(st===SALE_REJECTED?'rejected':'pending');
+    const r=sRow(x), ma=sMa(x);
+    const act=(st===SALE_PENDING)
+      ? `<button class="btn btn-sm btn-accept sale-accept" data-row="${esc(r)}" data-ma="${esc(ma)}" type="button">Tiếp Nhận</button> <button class="btn btn-sm btn-danger sale-reject" data-row="${esc(r)}" data-ma="${esc(ma)}" type="button">Từ Chối</button>`
+      : `<span class="muted">Đã khóa</span>`;
+    return `<tr>
+      <td class="mono c-main">${esc(ma)||'—'}</td>
+      <td>${esc(sReceiver(x))||'—'}</td>
+      <td><span class="sale-chip ${cls}">${esc(st)||'—'}</span></td>
+      <td>${esc(sReason(x))||'—'}</td>
+      <td class="c-sub">${esc(sTime(x))||'—'}</td>
+      <td style="white-space:nowrap">${act}</td>
+    </tr>`;
+  }).join(''):`<tr><td colspan="6"><div class="empty">Không có PYC nào trong mục này.</div></td></tr>`;
+}
+$('#saleFilter').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;saleFilter=b.dataset.f;$$('#saleFilter button').forEach(x=>x.classList.toggle('sel',x===b));renderSales();});
+$('#saleSearch').addEventListener('input',renderSales);
+$('#saleTable').addEventListener('click',async e=>{
+  const acc=e.target.closest('.sale-accept'), rej=e.target.closest('.sale-reject');
+  if(acc){
+    const row=acc.dataset.row, ma=acc.dataset.ma;
+    acc.disabled=true; acc.textContent='Đang gửi…';
+    const res=await api({action:'sale_action',row_index:(isNaN(+row)?row:+row),decision:'accept',actor:currentUser},15000);
+    if(res&&res.ok){ if(Array.isArray(res.sales))SALES=res.sales; toast('Đã tiếp nhận PYC #'+ma); renderSales(); salesBadge(); }
+    else{ toast(res&&res.error?res.error:'Lỗi tiếp nhận, thử lại.'); acc.disabled=false; acc.textContent='Tiếp Nhận'; }
+    return;
+  }
+  if(rej){ openRejModal(rej.dataset.row, rej.dataset.ma); }
+});
+function openRejModal(row,ma){
+  rejTarget={row:(isNaN(+row)?row:+row), ma:ma};
+  $('#rejInfo').innerHTML='Từ chối PYC: <b>'+esc(ma)+'</b>';
+  $('#rejReason').selectedIndex=0; $('#rejOther').value=''; $('#rejOtherWrap').hidden=true; $('#rej_err').hidden=true;
+  $('#rejModal').hidden=false;
+}
+function closeRejModal(){ $('#rejModal').hidden=true; rejTarget=null; }
+$('#rejReason').addEventListener('change',()=>{ $('#rejOtherWrap').hidden=($('#rejReason').value!=='__other__'); });
+$('#rejClose').addEventListener('click',closeRejModal);
+$('#rejCancel').addEventListener('click',closeRejModal);
+$('#rejModal').addEventListener('click',e=>{ if(e.target===$('#rejModal'))closeRejModal(); });
+$('#rejConfirm').addEventListener('click',async function(){
+  if(!rejTarget)return;
+  let reason=$('#rejReason').value;
+  if(reason==='__other__'){ reason=$('#rejOther').value.trim(); if(!reason){$('#rej_err').textContent='Vui lòng nhập lý do cụ thể.';$('#rej_err').hidden=false;return;} }
+  const btn=$('#rejConfirm'); btn.disabled=true; btn.textContent='Đang gửi…'; $('#rej_err').hidden=true;
+  const res=await api({action:'sale_action',row_index:rejTarget.row,decision:'reject',reason:reason,actor:currentUser},15000);
+  btn.disabled=false; btn.textContent='Xác nhận từ chối';
+  if(res&&res.ok){ if(Array.isArray(res.sales))SALES=res.sales; toast('Đã từ chối PYC #'+rejTarget.ma); closeRejModal(); renderSales(); salesBadge(); }
+  else{ $('#rej_err').textContent=res&&res.error?res.error:'Lỗi từ chối, thử lại.';$('#rej_err').hidden=false; }
+});
+
 /* ---------- MISC ---------- */
-function updateCounts(){$('#listBadge').textContent=DATA.filter(isOpen).length;if(curTab==='overview')renderOverview();}
+function updateCounts(){$('#listBadge').textContent=DATA.filter(isOpen).length;salesBadge();if(curTab==='overview')renderOverview();}
 $('#themeBtn').addEventListener('click',()=>{
   const cur=document.documentElement.getAttribute('data-theme');
   const dark=cur?cur==='dark':!window.matchMedia('(prefers-color-scheme: light)').matches;
@@ -877,7 +1013,7 @@ function startApp(){
   appStarted=true;
   renderProviderTags(); resetForm(); updateCounts(); lastSyncTs=Date.now(); setTab('overview');
   (async()=>{ setSync(true); const ok=await syncAll(); lastSyncTs=Date.now(); setSync(false); if(ok){resetForm();updateCounts();renderCurrent();} })();
-  setInterval(()=>{ if(!syncing&&['overview','detail','list','audit'].includes(curTab))refreshFromServer(); },120000);
+  setInterval(()=>{ if(!syncing&&['overview','detail','list','sales','audit'].includes(curTab))refreshFromServer(); },120000);
 }
 function lgErr(m){const e=$('#lg_err');e.textContent=m;e.hidden=false;}
 /* ---- Mã xác nhận (captcha) client-side ---- */
