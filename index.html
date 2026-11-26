@@ -1,7 +1,7 @@
 <title>Cổng Điều phối Add-on</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: fixed left sidebar (brand + nav) · scrolling dark content panel, rounded cards. Dark-first, blue accent (hippy style). */
+/* Layout: fixed left sidebar (brand + nav) · scrolling dark content panel, rounded cards. Dark-first, blue accent. */
 :root{
   --bg:#0b0b0e; --panel:#161619; --panel-2:#1d1d22; --inner:#131316; --fg:#e9e9ee; --muted:#8c8c98;
   --border:#292930; --border-soft:#222228; --accent:#4f8cff; --accent-2:#3a74e0; --accent-weak:rgba(79,140,255,.14);
@@ -32,6 +32,7 @@
   color-scheme:light;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}   /* ép ẩn: thuộc tính hidden luôn thắng mọi display */
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font);line-height:1.5;margin:0;font-size:14px}
 h1,h2,h3{margin:0;font-family:var(--mono);font-weight:600;letter-spacing:-.01em}
@@ -61,12 +62,20 @@ select{cursor:pointer}
 .group.collapsed .sub{display:none}
 .sub{padding:6px 0 2px;display:flex;flex-direction:column;gap:2px}
 .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px 10px 14px;margin-left:10px;border-radius:var(--radius-sm);color:var(--muted);cursor:pointer;font-weight:500;border-left:2px solid var(--border-soft)}
-.nav-item svg{width:17px;height:17px}
+.nav-item svg{width:17px;height:17px;flex:0 0 17px}
 .nav-item:hover{color:var(--fg);background:var(--panel-2)}
 .nav-item.active{color:var(--fg);background:var(--panel-2);border-left-color:var(--accent);font-weight:600}
 .nav-item .badge{margin-left:auto;background:var(--accent);color:#fff;border-radius:20px;min-width:20px;height:20px;padding:0 6px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
-.side-foot{padding:14px 18px;border-top:1px solid var(--border-soft);font-size:11.5px;color:var(--muted)}
-.side-foot b{color:var(--fg);font-family:var(--mono);font-weight:600}
+.side-foot{padding:12px 14px;border-top:1px solid var(--border-soft);font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:10px}
+.user-box{display:flex;align-items:center;gap:9px}
+.user-av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;display:grid;place-items:center;font-weight:700;font-family:var(--mono);flex:0 0 32px;font-size:14px}
+.user-meta{flex:1;min-width:0}
+.user-name{color:var(--fg);font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.role-chip{display:inline-block;background:var(--accent-weak);color:var(--accent);border-radius:20px;padding:1px 8px;font-size:10.5px;font-weight:700;margin-top:2px}
+.role-chip.admin{background:var(--good-weak);color:var(--good)}
+.logout-mini{border:1px solid var(--border);background:var(--panel-2);color:var(--fg);border-radius:8px;width:30px;height:30px;cursor:pointer;flex:0 0 30px;font-size:14px}
+.logout-mini:hover{border-color:var(--crit);color:var(--crit)}
+.sla-line b{color:var(--fg);font-family:var(--mono);font-weight:600}
 
 /* ---------- CONTENT ---------- */
 .content{flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden}
@@ -153,6 +162,7 @@ tbody tr:last-child td{border-bottom:0}
 .st-chip.s-wait{background:var(--wait-weak);color:var(--wait)} .st-chip.s-wait .dot{background:var(--wait)}
 .st-chip.s-done{background:var(--good-weak);color:var(--good)} .st-chip.s-done .dot{background:var(--good)}
 .st-chip.s-cancel{background:var(--panel-2);color:var(--muted)} .st-chip.s-cancel .dot{background:var(--muted)}
+.log-act{font-weight:700;font-size:11px;letter-spacing:.02em}
 
 /* ---------- form ---------- */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px 24px}
@@ -186,6 +196,33 @@ textarea{resize:vertical;width:100%}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
 
+/* ---------- login gate ---------- */
+.login-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:20px;background:var(--bg)}
+.login-card{width:min(400px,100%);background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 26px;display:flex;flex-direction:column;gap:14px}
+.login-brand{display:flex;gap:11px;align-items:center}
+.login-brand .mk{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;flex:0 0 40px}
+.login-brand .mk svg{width:21px;height:21px;color:#fff}
+.login-brand .bt{font-family:var(--mono);font-weight:700;font-size:16px;line-height:1.1}
+.login-brand .bs{font-size:11.5px;color:var(--muted)}
+.login-title{font-size:18px;margin:6px 0 0}
+.login-sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+.login-field{display:flex;flex-direction:column;gap:6px}
+.login-field label{font-size:12.5px;font-weight:600}
+.login-field input{width:100%}
+.login-err{background:var(--crit-weak);color:var(--crit);border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:600}
+.login-btn{appearance:none;border:0;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font:inherit;font-weight:700;border-radius:var(--radius-sm);padding:12px;cursor:pointer;font-size:14.5px;margin-top:2px;display:flex;align-items:center;justify-content:center;gap:8px}
+.login-btn:hover{filter:brightness(1.08)}
+.login-btn:disabled{opacity:.7;cursor:default}
+.login-note{text-align:center;color:var(--muted);font-size:11px}
+.cap-row{display:flex;gap:9px;align-items:center}
+.cap-row input{flex:1;min-width:0;letter-spacing:2px;font-family:var(--mono)}
+#capCanvas{border:1px solid var(--border);border-radius:8px;cursor:pointer;flex:0 0 auto}
+.cap-reload{border:1px solid var(--border);background:var(--panel-2);color:var(--fg);border-radius:8px;width:40px;height:44px;cursor:pointer;font-size:18px;flex:0 0 auto}
+.cap-reload:hover{border-color:var(--accent);color:var(--accent)}
+
+/* role-based hiding */
+body:not(.is-admin) .admin-only{display:none !important}
+
 @media(max-width:1000px){ .kpi-grid{grid-template-columns:repeat(2,1fr)} .chart-grid{grid-template-columns:1fr} .cfg-grid{grid-template-columns:1fr} }
 @media(max-width:820px){
   .app{padding:0;gap:0;display:block;height:auto;min-height:100%}
@@ -198,7 +235,30 @@ textarea{resize:vertical;width:100%}
 @media(max-width:540px){ .kpi-grid{grid-template-columns:1fr} .form-grid{grid-template-columns:1fr} .phead,.pbody{padding-left:16px;padding-right:16px} }
 </style>
 
-<div class="app" id="app">
+<!-- ===== LOGIN GATE ===== -->
+<div class="login-gate" id="loginGate">
+  <form class="login-card" id="loginForm" autocomplete="on">
+    <div class="login-brand">
+      <div class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3V4a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v3H4a1 1 0 0 0-1 1v5a3 3 0 0 0 3 3h2"/><rect x="9" y="13" width="6" height="8" rx="1"/></svg></div>
+      <div><div class="bt">Report Team</div><div class="bs">Cổng điều phối triển khai F&amp;B</div></div>
+    </div>
+    <div><h2 class="login-title">Đăng nhập hệ thống</h2><div class="login-sub">Vui lòng đăng nhập để tiếp tục</div></div>
+    <div class="login-field"><label>Tài khoản</label><input id="lg_user" name="username" autocomplete="username" placeholder="Nhập tài khoản"></div>
+    <div class="login-field"><label>Mật khẩu</label><input id="lg_pass" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu"></div>
+    <div class="login-field"><label>Mã xác nhận</label>
+      <div class="cap-row">
+        <input id="lg_cap" autocomplete="off" maxlength="6" placeholder="Nhập mã bên phải">
+        <canvas id="capCanvas" width="128" height="44" title="Bấm để đổi mã khác"></canvas>
+        <button type="button" id="capReload" class="cap-reload" title="Đổi mã khác">↻</button>
+      </div>
+    </div>
+    <div class="login-err" id="lg_err" hidden></div>
+    <button type="submit" class="login-btn" id="lg_btn">Đăng nhập</button>
+    <div class="login-note">Hệ thống nội bộ · Report Team</div>
+  </form>
+</div>
+
+<div class="app" id="app" hidden>
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <div class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3V4a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v3H4a1 1 0 0 0-1 1v5a3 3 0 0 0 3 3h2"/><path d="M12 11v0"/><rect x="9" y="13" width="6" height="8" rx="1"/></svg></div>
@@ -217,6 +277,10 @@ textarea{resize:vertical;width:100%}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="12"/><line x1="10" y1="20" x2="10" y2="6"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="20" y1="20" x2="20" y2="9"/></svg>
             <span>Tổng quan báo cáo</span>
           </div>
+          <div class="nav-item" data-tab="detail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+            <span>Báo cáo chi tiết</span>
+          </div>
           <div class="nav-item" data-tab="new">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             <span>Tiếp nhận mới</span>
@@ -226,14 +290,25 @@ textarea{resize:vertical;width:100%}
             <span>Danh sách theo dõi</span>
             <span class="badge" id="listBadge">0</span>
           </div>
-          <div class="nav-item" data-tab="config">
+          <div class="nav-item admin-only" data-tab="config">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             <span>Cấu hình danh mục</span>
+          </div>
+          <div class="nav-item admin-only" data-tab="audit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+            <span>Nhật ký thao tác</span>
           </div>
         </div>
       </div>
     </nav>
-    <div class="side-foot">Mốc đối chiếu SLA:<br><b id="slaClock">—</b></div>
+    <div class="side-foot">
+      <div class="user-box">
+        <div class="user-av" id="userAv">?</div>
+        <div class="user-meta"><div class="user-name" id="userName">—</div><div><span class="role-chip" id="userRole">KT</span></div></div>
+        <button class="logout-mini" id="logoutBtn" type="button" title="Đăng xuất">⎋</button>
+      </div>
+      <div class="sla-line">Mốc đối chiếu SLA: <b id="slaClock">—</b></div>
+    </div>
   </aside>
 
   <section class="content">
@@ -285,6 +360,34 @@ textarea{resize:vertical;width:100%}
         </div>
       </section>
 
+      <!-- ===== DETAIL REPORT ===== -->
+      <section id="tab-detail" hidden>
+        <div class="card">
+          <div class="card-b">
+            <div class="filters">
+              <div class="fg"><label>Từ ngày</label><input type="date" id="dFrom"></div>
+              <div class="fg"><label>Đến ngày</label><input type="date" id="dTo"></div>
+              <div class="fg"><label>Kỹ thuật viên</label><select id="dTech" style="min-width:140px"></select></div>
+              <div class="fg"><label>Nhóm Add-on</label><select id="dCat" style="min-width:170px"></select></div>
+              <div class="fg"><label>Nhà cung cấp</label><select id="dNcc" style="min-width:150px"></select></div>
+              <div class="fg"><label>Hình thức</label><select id="dSup" style="min-width:120px"><option value="">Tất cả</option><option>Online</option><option>Onsite</option></select></div>
+              <button class="btn btn-sm" id="dClear" type="button">Bỏ lọc</button>
+              <div class="spacer"></div>
+              <button class="btn btn-primary" id="dExport" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Xuất Excel</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-h"><h2>Kết quả lọc</h2><span class="count-note" id="dCount"></span></div>
+          <div class="tbl-scroll">
+            <table id="detailTable">
+              <thead><tr><th>Mã / Thời gian</th><th>Khách hàng (Mã TH)</th><th>Add-on / NCC</th><th>POS</th><th>KT · Kênh</th><th>Xử lý (giờ)</th><th>Trạng thái</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- ===== NEW ===== -->
       <section id="tab-new" hidden>
         <div class="card">
@@ -325,14 +428,14 @@ textarea{resize:vertical;width:100%}
           </div>
           <div class="tbl-scroll">
             <table id="listTable">
-              <thead><tr><th>Mã / Thời gian</th><th>Khách hàng (Mã TH)</th><th>Add-on / POS</th><th>KT · Kênh</th><th>Xử lý (giờ)</th><th>Trạng thái</th><th></th></tr></thead>
+              <thead><tr><th>Mã / Thời gian</th><th>Khách hàng (Mã TH)</th><th>Add-on / POS</th><th>KT · Kênh</th><th>Xử lý (giờ)</th><th>Trạng thái</th><th class="admin-only"></th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- ===== CONFIG ===== -->
+      <!-- ===== CONFIG (admin) ===== -->
       <section id="tab-config" hidden>
         <div class="card">
           <div class="card-b">
@@ -341,6 +444,19 @@ textarea{resize:vertical;width:100%}
               <div><p class="section-title">Nhóm Add-on</p><div class="chips" id="cfgCat"></div><div class="add-row"><input id="addCat" placeholder="Nhóm add-on mới"><button class="btn btn-primary btn-sm" data-add="cat" type="button">Thêm</button></div></div>
               <div><p class="section-title">Phần mềm POS</p><div class="chips" id="cfgPos"></div><div class="add-row"><input id="addPos" placeholder="Phần mềm POS mới"><button class="btn btn-primary btn-sm" data-add="pos" type="button">Thêm</button></div></div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== AUDIT LOG (admin) ===== -->
+      <section id="tab-audit" hidden>
+        <div class="card">
+          <div class="card-h"><h2>Nhật ký thao tác</h2><span class="count-note" id="auditCount"></span></div>
+          <div class="tbl-scroll">
+            <table id="auditTable">
+              <thead><tr><th>Thời gian</th><th>Người dùng</th><th>Thao tác</th><th>Mã phiếu</th><th>Chi tiết</th></tr></thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -356,22 +472,22 @@ textarea{resize:vertical;width:100%}
 <script>
 "use strict";
 /* ============================================================
-   LƯU TRỮ — Google Sheet (Apps Script Web App) = KHO CHUNG;
-   localStorage = cache hiển thị tức thời + chạy khi mất mạng.
-   Đổi backend: chỉ cần thay API_URL.
+   KẾT NỐI: Cloudflare Worker (proxy bảo mật) — mọi lệnh POST JSON.
+   Không chứa api_key trong trình duyệt. Xác thực & phân quyền ở server.
    ============================================================ */
-const API_URL='https://script.google.com/macros/s/AKfycbww-zABax-Off-PbjSizZiqeT1gjiOy21CU_bHyDrLN0larRQR-ZXkU6jPF2YwP_A6uLw/exec';
-const USE_API=!!API_URL;
-const LS_DATA='addon_tickets_v3', LS_CFG='addon_config_v2', OVERDUE_HOURS=4;
+const API_URL='https://hippy-api-proxy.khanguyen-ipos.workers.dev/';
+const LS_DATA='addon_tickets_v3', LS_CFG='addon_config_v2', LS_USER='rt_user', OVERDUE_HOURS=4;
 const STATUSES=['Mới tiếp nhận','Đang xử lý','Chờ khách/Đối tác','Hoàn thành','Hủy'];
 const OPEN_STATUSES=['Mới tiếp nhận','Đang xử lý','Chờ khách/Đối tác'];
 const PROVIDER_TAGS=['IPOSINVOICE','VNPT','BKAV','M-invoice','Me-invoice','MoMo EDC','iHub','iTP3350','VNPay QR'];
 const statusClass={'Mới tiếp nhận':'s-new','Đang xử lý':'s-proc','Chờ khách/Đối tác':'s-wait','Hoàn thành':'s-done','Hủy':'s-cancel'};
 const PAGE_META={
   overview:['Tổng quan báo cáo','Theo dõi hiệu suất triển khai add-on theo thời gian thực'],
+  detail:['Báo cáo chi tiết','Lọc sâu theo ngày, KT, nhóm, nhà cung cấp, hình thức'],
   new:['Tiếp nhận phiếu mới','Tạo phiếu triển khai — lưu xong tự chuyển sang danh sách theo dõi'],
   list:['Danh sách phiếu theo dõi','Đổi trạng thái trực tiếp để tự động chốt thời điểm hoàn tất'],
-  config:['Cấu hình danh mục','Thêm/xóa danh mục — đồng bộ ngay với form tiếp nhận']
+  config:['Cấu hình danh mục','Thêm/xóa danh mục — đồng bộ ngay với form tiếp nhận'],
+  audit:['Nhật ký thao tác','Toàn bộ lịch sử thao tác của người dùng trên hệ thống']
 };
 const DEFAULT_CFG={
   tech:['Thành','Bình','Dũng','Kha'],
@@ -379,69 +495,59 @@ const DEFAULT_CFG={
   pos:['POS PC 12.5 (2.2.1.9)','POS PC 2.2.1.8','FABi','TCH','Khác']
 };
 
-/* ---- API Google Sheet (POST dạng text/plain để tránh CORS preflight) ---- */
-async function apiGet(action){try{const r=await fetch(API_URL+'?action='+encodeURIComponent(action),{method:'GET'});return await r.json();}catch(e){return {ok:false,error:String(e)};}}
-async function apiPost(payload){try{const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(payload)});return await r.json();}catch(e){return {ok:false,error:String(e)};}}
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 
-/* ---- Cache localStorage ---- */
+/* ---- API Worker: tất cả POST application/json ---- */
+async function api(payload,timeoutMs){
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),timeoutMs||25000);
+  try{const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:ctrl.signal});clearTimeout(to);return await r.json();}
+  catch(e){clearTimeout(to);
+    const slow=(e&&e.name==='AbortError');
+    return {ok:false,error:slow?'Máy chủ phản hồi quá lâu (mạng chậm hoặc Worker bận). Vui lòng thử lại.':'Không kết nối được máy chủ — có thể mạng đang chặn. Thử mạng khác (4G).'};}
+}
+/* ---- Cache localStorage (hiển thị tức thời) ---- */
 function cacheGet(k,f){try{const r=localStorage.getItem(k);return r?JSON.parse(r):f;}catch(e){return f;}}
 function cacheSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
-function loadData(){
-  if(USE_API)return cacheGet(LS_DATA,[]);            // hiện cache trước; syncTickets() cập nhật từ kho chung
-  const c=cacheGet(LS_DATA,null); if(c)return c;
-  const seed=seedData();cacheSet(LS_DATA,seed);return seed;
-}
-function saveData(d){cacheSet(LS_DATA,d);}
-function loadConfig(){return Object.assign({},DEFAULT_CFG,cacheGet(LS_CFG,{}));}
-function saveConfig(c){cacheSet(LS_CFG,c);}
+let currentUser=null, DATA=cacheGet(LS_DATA,[]), CFG=Object.assign({},DEFAULT_CFG,cacheGet(LS_CFG,{})), LOGS=[], curTab='overview', chartTech=null, chartCat=null, syncing=false;
+function isAdmin(){return !!(currentUser&&currentUser.role==='admin');}
 
-/* ---- Đồng bộ với kho chung ---- */
-let syncing=false;
-async function syncTickets(){
-  if(!USE_API)return false;
-  const res=await apiGet('tickets');
-  if(res&&res.ok&&Array.isArray(res.tickets)){DATA=res.tickets;cacheSet(LS_DATA,DATA);return true;}
+/* ---- Đồng bộ từ Worker: {action:'all', actor} -> {tickets, config, logs} ---- */
+async function syncAll(){
+  const res=await api({action:'all',actor:currentUser});
+  if(res&&res.ok){
+    DATA=Array.isArray(res.tickets)?res.tickets:[];
+    if(res.config&&Object.keys(res.config).length)CFG=Object.assign({},DEFAULT_CFG,res.config);
+    LOGS=Array.isArray(res.logs)?res.logs:[];
+    cacheSet(LS_DATA,DATA); cacheSet(LS_CFG,CFG);
+    return true;
+  }
   return false;
 }
-async function syncConfig(){
-  if(!USE_API)return false;
-  const res=await apiGet('config');
-  if(res&&res.ok&&res.config){
-    if(Object.keys(res.config).length){CFG=Object.assign({},DEFAULT_CFG,res.config);cacheSet(LS_CFG,CFG);}
-    else{apiPost({action:'config',config:CFG});}      // lần đầu: nạp danh mục mặc định lên kho chung
-  }
-  return true;
-}
-function saveTicket(t){cacheSet(LS_DATA,DATA);if(USE_API)apiPost({action:'update',ticket:t});}   // server upsert theo id
-function deleteTicketRemote(id){if(USE_API)apiPost({action:'delete',id:id});}
-function saveConfigRemote(){cacheSet(LS_CFG,CFG);if(USE_API)apiPost({action:'config',config:CFG});}
+/* ---- Ghi dữ liệu: luôn kèm actor ---- */
+function saveTicket(t,act){cacheSet(LS_DATA,DATA);api({action:act||'update',ticket:t,actor:currentUser});}
+function deleteTicketRemote(id){api({action:'delete',id:id,actor:currentUser});}
+function saveConfigRemote(){cacheSet(LS_CFG,CFG);api({action:'config',config:CFG,actor:currentUser});}
 function setSync(b){const el=$('#refreshBtn');if(el){el.textContent=b?'⟳ Đang đồng bộ…':'↻ Làm mới';el.disabled=b;}}
-async function refreshFromServer(){
-  if(!USE_API||syncing)return; syncing=true; setSync(true);
-  const ok=await syncTickets(); syncing=false; setSync(false);
-  if(ok){ if(curTab==='overview')renderOverview(); if(curTab==='list')renderList(); updateCounts(); }
+let lastSyncTs=0;
+async function refreshFromServer(force){
+  if(syncing)return;
+  if(!force && Date.now()-lastSyncTs<25000) return;   // chống gọi server quá dày (giảm tải GAS)
+  syncing=true; setSync(true);
+  const ok=await syncAll(); lastSyncTs=Date.now(); syncing=false; setSync(false);
+  if(ok){ renderCurrent(); updateCounts(); }
+}
+function renderCurrent(){
+  if(curTab==='overview')renderOverview();
+  else if(curTab==='detail')renderDetail();
+  else if(curTab==='list')renderList();
+  else if(curTab==='config')renderConfig();
+  else if(curTab==='audit')renderAudit();
 }
 
-function iso(h){return new Date(Date.now()-h*3600000).toISOString();}
-function seedData(){
-  return [
-    {id:'TK-2026-001',created_at:iso(7),brand_code:'TH08412',pos_id:'8412',customer_name:'Cơm Tấm Phúc Lộc Thọ - Q.1',phone:'0908123456',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'IPOSINVOICE',support_type:'Online',technician:'Thành',status:'Hoàn thành',note:'Cấu hình phát hành HĐĐT, test xuất hóa đơn OK.',completed_at:iso(4.5)},
-    {id:'TK-2026-002',created_at:iso(6),brand_code:'TH09105',pos_id:'9105',customer_name:'Phúc Long Coffee - Thảo Điền',phone:'0912345678',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Thanh toán (MoMo / VNPay / EDC)',provider_or_device:'MoMo EDC',support_type:'Onsite',technician:'Bình',status:'Đang xử lý',note:'Lắp máy EDC MoMo, chờ kích hoạt MID.',completed_at:null},
-    {id:'TK-2026-003',created_at:iso(5),brand_code:'TH07554',pos_id:'7554',customer_name:'Bún Đậu Mắm Tôm A Chánh',phone:'0987654321',pos_system:'FABi',addon_category:'Sàn TMĐT (GrabFood / ShopeeFood)',provider_or_device:'GrabFood, ShopeeFood',support_type:'Online',technician:'Dũng',status:'Chờ khách/Đối tác',note:'Chờ khách gửi tài khoản Grab Merchant.',completed_at:null},
-    {id:'TK-2026-004',created_at:iso(2.4),brand_code:'TH10299',pos_id:'10299',customer_name:'Lẩu Bò Nhà Gỗ - Gò Vấp',phone:'0933445566',pos_system:'POS PC 2.2.1.8',addon_category:'iHub / Kết nối phần cứng',provider_or_device:'iHub, iTP3350',support_type:'Onsite',technician:'Kha',status:'Đang xử lý',note:'Cài máy in bếp qua iHub.',completed_at:null},
-    {id:'TK-2026-005',created_at:iso(0.7),brand_code:'TH11042',pos_id:'11042',customer_name:'Highlands Coffee - Phan Xích Long',phone:'0918223344',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'BKAV',support_type:'Online',technician:'Thành',status:'Mới tiếp nhận',note:'Đăng ký phát hành HĐĐT BKAV.',completed_at:null},
-    {id:'TK-2026-006',created_at:iso(25),brand_code:'TH06218',pos_id:'6218',customer_name:'Katinat Saigon Kafe - Nguyễn Huệ',phone:'0977889900',pos_system:'TCH',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'VNPT',support_type:'Online',technician:'Bình',status:'Hoàn thành',note:'Kết nối HĐĐT VNPT cho hệ TCH.',completed_at:iso(22)},
-    {id:'TK-2026-007',created_at:iso(50),brand_code:'TH04921',pos_id:'4921',customer_name:'Bánh Mì Huỳnh Hoa - Lê Thị Riêng',phone:'0901223344',pos_system:'POS PC 12.5 (2.2.1.9)',addon_category:'Thanh toán (MoMo / VNPay / EDC)',provider_or_device:'VNPay QR',support_type:'Online',technician:'Dũng',status:'Hoàn thành',note:'Tích hợp VNPay QR, test thanh toán OK.',completed_at:iso(47)},
-    {id:'TK-2026-008',created_at:iso(73),brand_code:'TH03010',pos_id:'3010',customer_name:'Phở Hòa Pasteur - Quận 3',phone:'0909888766',pos_system:'POS PC 2.2.1.8',addon_category:'Hóa đơn điện tử (HĐĐT)',provider_or_device:'M-invoice',support_type:'Onsite',technician:'Kha',status:'Hoàn thành',note:'Phát hành HĐĐT M-invoice.',completed_at:iso(69)}
-  ];
-}
-
-let DATA=loadData(), CFG=loadConfig(), curTab='overview', chartTech=null, chartCat=null;
-const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-
-function fmtDT(s){if(!s)return'—';return new Date(s).toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
-function fmtShort(s){const d=new Date(s);return d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit'});}
+/* ---------- helpers ---------- */
+function fmtDT(s){if(!s)return'—';const d=new Date(s);return isNaN(d)?String(s):d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function fmtShort(s){const d=new Date(s);if(isNaN(d))return String(s||'—');return d.toLocaleString('vi-VN',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit'});}
 function hoursBetween(a,b){return (new Date(b)-new Date(a))/3600000;}
 function hoursOpen(t){return hoursBetween(t.created_at,new Date().toISOString());}
 function isOpen(t){return OPEN_STATUSES.includes(t.status);}
@@ -450,20 +556,24 @@ function procHours(t){return (t.status==='Hoàn thành'&&t.completed_at)?hoursBe
 function nextId(){let max=0;DATA.forEach(t=>{const m=/TK-\d{4}-(\d+)/.exec(t.id||'');if(m)max=Math.max(max,+m[1]);});return 'TK-'+new Date().getFullYear()+'-'+String(max+1).padStart(3,'0');}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
 function stChip(s,ovd){return `<span class="st-chip ${statusClass[s]||'s-new'}"><span class="dot"></span>${s}</span>`+(ovd?` <span class="ovd-tag">⚠</span>`:'');}
-function filteredByDate(){const f=$('#fFrom').value,t=$('#fTo').value;return DATA.filter(x=>{const d=x.created_at.slice(0,10);if(f&&d<f)return false;if(t&&d>t)return false;return true;});}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function filteredByDate(){const f=$('#fFrom').value,t=$('#fTo').value;return DATA.filter(x=>{const d=(x.created_at||'').slice(0,10);if(f&&d<f)return false;if(t&&d>t)return false;return true;});}
 
 /* ---------- NAV ---------- */
 function setTab(name){
+  if((name==='config'||name==='audit')&&!isAdmin())name='overview';
   curTab=name;
   $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
-  ['overview','new','list','config'].forEach(n=>{$('#tab-'+n).hidden=(n!==name);});
+  ['overview','detail','new','list','config','audit'].forEach(n=>{$('#tab-'+n).hidden=(n!==name);});
   $('#pTitle').textContent=PAGE_META[name][0];
   $('#pSub').textContent=PAGE_META[name][1];
   closeSidebar();
   if(name==='overview'){renderOverview();refreshFromServer();}
-  if(name==='new')refreshDatalists();
-  if(name==='list'){renderList();refreshFromServer();}
-  if(name==='config')renderConfig();
+  else if(name==='detail'){renderDetail();refreshFromServer();}
+  else if(name==='new')refreshDatalists();
+  else if(name==='list'){renderList();refreshFromServer();}
+  else if(name==='config')renderConfig();
+  else if(name==='audit'){renderAudit();refreshFromServer();}
 }
 $('#navSub').addEventListener('click',e=>{const b=e.target.closest('.nav-item');if(b)setTab(b.dataset.tab);});
 $('#groupH').addEventListener('click',()=>$('#group').classList.toggle('collapsed'));
@@ -501,9 +611,9 @@ function renderOverview(){
   const open=rows.filter(isOpen).sort((a,b)=>hoursOpen(b)-hoursOpen(a));
   $('#openTable tbody').innerHTML=open.length?open.map(t=>`
     <tr class="${isOverdue(t)?'row-overdue':''}">
-      <td><div class="c-main mono">${t.id}</div><div class="c-sub">${fmtShort(t.created_at)}</div></td>
-      <td><div class="c-main">${t.customer_name}</div><div class="c-sub">${t.pos_id?'POS '+t.pos_id+' · ':''}${t.brand_code} · ${t.phone}</div></td>
-      <td>${t.addon_category}</td><td>${t.technician||'—'} · ${t.support_type}</td>
+      <td><div class="c-main mono">${esc(t.id)}</div><div class="c-sub">${fmtShort(t.created_at)}</div></td>
+      <td><div class="c-main">${esc(t.customer_name)}</div><div class="c-sub">${t.pos_id?'POS '+esc(t.pos_id)+' · ':''}${esc(t.brand_code)} · ${esc(t.phone)}</div></td>
+      <td>${esc(t.addon_category)}</td><td>${esc(t.technician)||'—'} · ${esc(t.support_type)}</td>
       <td class="mono">${hoursOpen(t).toFixed(1)}</td><td>${stChip(t.status,isOverdue(t))}</td>
     </tr>`).join(''):`<tr><td colspan="6"><div class="empty">Không có ca nào đang mở trong khoảng lọc.</div></td></tr>`;
   $('#openNote').textContent=`${open.length} ca đang mở · ${open.filter(isOverdue).length} quá hạn`;
@@ -533,19 +643,55 @@ $('#fFrom').addEventListener('change',renderOverview);
 $('#fTo').addEventListener('change',renderOverview);
 $('#fClear').addEventListener('click',()=>{$('#fFrom').value='';$('#fTo').value='';renderOverview();});
 
-/* ---------- EXPORT ---------- */
-$('#btnExport').addEventListener('click',()=>{
-  const rows=filteredByDate(); if(!rows.length){toast('Không có dữ liệu để xuất');return;}
+/* ---------- EXPORT (dùng chung) ---------- */
+function exportRows(rows,prefix){
+  if(!rows.length){toast('Không có dữ liệu để xuất');return;}
   const aoa=rows.map(t=>({'Mã phiếu':t.id,'Thời gian tiếp nhận':fmtDT(t.created_at),'POS_ID':t.pos_id||'','Mã thương hiệu':t.brand_code,'Khách hàng':t.customer_name,'SĐT':t.phone,'Phần mềm POS':t.pos_system,'Nhóm Add-on':t.addon_category,'NCC / Thiết bị':t.provider_or_device,'Hình thức':t.support_type,'KT phụ trách':t.technician,'Trạng thái':t.status,'Hoàn thành lúc':t.completed_at?fmtDT(t.completed_at):'','Thời gian xử lý (giờ)':procHours(t)!=null?procHours(t).toFixed(1):'','Quá hạn >4h':isOverdue(t)?'Có':'','Ghi chú':t.note||''}));
   const ws=XLSX.utils.json_to_sheet(aoa);
   ws['!cols']=[{wch:13},{wch:18},{wch:10},{wch:14},{wch:32},{wch:14},{wch:22},{wch:28},{wch:18},{wch:9},{wch:14},{wch:16},{wch:18},{wch:16},{wch:11},{wch:40}];
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'BaoCao_Addon');
   const d=new Date(),stamp=`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-  XLSX.writeFile(wb,`BaoCao_TrienKhai_Addon_${stamp}.xlsx`); toast('Đã xuất '+rows.length+' phiếu ra Excel');
-});
+  XLSX.writeFile(wb,`${prefix}_${stamp}.xlsx`); toast('Đã xuất '+rows.length+' phiếu ra Excel');
+}
+$('#btnExport').addEventListener('click',()=>exportRows(filteredByDate(),'BaoCao_TrienKhai_Addon'));
+
+/* ---------- DETAIL REPORT ---------- */
+function fillFilterSelect(sel,arr,allLabel){const s=$(sel),cur=s.value;s.innerHTML=`<option value="">${allLabel}</option>`+arr.map(v=>`<option${v===cur?' selected':''}>${esc(v)}</option>`).join('');}
+function detailFiltered(){
+  const f=$('#dFrom').value,t=$('#dTo').value,kt=$('#dTech').value,cat=$('#dCat').value,ncc=$('#dNcc').value,sup=$('#dSup').value;
+  return DATA.filter(x=>{
+    const d=(x.created_at||'').slice(0,10);
+    if(f&&d<f)return false; if(t&&d>t)return false;
+    if(kt&&x.technician!==kt)return false;
+    if(cat&&x.addon_category!==cat)return false;
+    if(ncc&&x.provider_or_device!==ncc)return false;
+    if(sup&&x.support_type!==sup)return false;
+    return true;
+  });
+}
+function renderDetail(){
+  fillFilterSelect('#dTech',CFG.tech,'Tất cả KT');
+  fillFilterSelect('#dCat',CFG.cat,'Tất cả nhóm');
+  fillFilterSelect('#dNcc',[...new Set(DATA.map(x=>x.provider_or_device).filter(Boolean))],'Tất cả NCC');
+  const rows=detailFiltered().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  $('#dCount').textContent=rows.length+' phiếu';
+  $('#detailTable tbody').innerHTML=rows.length?rows.map(t=>{const ph=procHours(t);return `
+    <tr class="${isOverdue(t)?'row-overdue':''}">
+      <td><div class="c-main mono">${esc(t.id)}</div><div class="c-sub">${fmtShort(t.created_at)}</div></td>
+      <td><div class="c-main">${esc(t.customer_name)}</div><div class="c-sub">${t.pos_id?'POS '+esc(t.pos_id)+' · ':''}${esc(t.brand_code)} · ${esc(t.phone)}</div></td>
+      <td><div class="c-main">${esc(t.addon_category)}</div><div class="c-sub">${esc(t.provider_or_device)||'—'}</div></td>
+      <td>${esc(t.pos_system)}</td>
+      <td>${esc(t.technician)||'—'} · ${esc(t.support_type)}</td>
+      <td class="mono">${ph!=null?ph.toFixed(1):(isOpen(t)?'⏳ '+hoursOpen(t).toFixed(1):'—')}</td>
+      <td>${stChip(t.status,isOverdue(t))}</td>
+    </tr>`;}).join(''):`<tr><td colspan="7"><div class="empty">Không có phiếu nào khớp bộ lọc.</div></td></tr>`;
+}
+['dFrom','dTo','dTech','dCat','dNcc','dSup'].forEach(id=>document.getElementById(id).addEventListener('change',renderDetail));
+$('#dClear').addEventListener('click',()=>{['dFrom','dTo','dTech','dCat','dNcc','dSup'].forEach(id=>document.getElementById(id).value='');renderDetail();});
+$('#dExport').addEventListener('click',()=>exportRows(detailFiltered(),'BaoCao_ChiTiet_Addon'));
 
 /* ---------- NEW FORM ---------- */
-function fillSelect(sel,arr,cur){sel.innerHTML=arr.map(v=>`<option${v===cur?' selected':''}>${v}</option>`).join('');}
+function fillSelect(sel,arr,cur){sel.innerHTML=arr.map(v=>`<option${v===cur?' selected':''}>${esc(v)}</option>`).join('');}
 let supportType='Online';
 function resetForm(){
   $('#f_id').value=nextId();
@@ -556,14 +702,14 @@ function resetForm(){
   fillSelect($('#f_tech'),CFG.tech,CFG.tech[0]); fillSelect($('#f_status'),STATUSES,'Mới tiếp nhận');
   supportType='Online'; $$('#segSupport button').forEach(b=>b.classList.toggle('sel',b.dataset.v==='Online'));
   $$('#providerTags .tag').forEach(t=>t.classList.remove('sel'));
-  if(typeof refreshDatalists==='function')refreshDatalists();
+  refreshDatalists();
 }
 function renderProviderTags(){$('#providerTags').innerHTML=PROVIDER_TAGS.map(p=>`<button type="button" class="tag" data-p="${p}">${p}</button>`).join('');}
 $('#providerTags').addEventListener('click',e=>{const b=e.target.closest('.tag');if(!b)return;$('#f_provider').value=b.dataset.p;$$('#providerTags .tag').forEach(t=>t.classList.toggle('sel',t===b));});
 $('#segSupport').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;supportType=b.dataset.v;$$('#segSupport button').forEach(x=>x.classList.toggle('sel',x===b));});
 $('#btnResetForm').addEventListener('click',resetForm);
 
-/* ---- Điền nhanh: gợi ý tự động + tự điền từ quán đã có ---- */
+/* ---- Điền nhanh ---- */
 function uniq(a){return [...new Set(a.filter(v=>v&&String(v).trim()))];}
 function refreshDatalists(){
   const set=(id,vals)=>{const dl=document.getElementById(id);if(dl)dl.innerHTML=vals.map(v=>`<option value="${String(v).replace(/"/g,'&quot;')}"></option>`).join('');};
@@ -578,9 +724,9 @@ function applyKnown(by){
   const iv=$('#f_posid').value.trim().toLowerCase(), bv=$('#f_brand').value.trim().toLowerCase(), cv=$('#f_customer').value.trim().toLowerCase(), pv=$('#f_phone').value.trim().toLowerCase();
   const rev=DATA.slice().reverse(); let m=null;
   if(by==='posid'&&iv)m=rev.find(t=>String(t.pos_id||'').toLowerCase()===iv);
-  else if(by==='customer'&&cv)m=rev.find(t=>t.customer_name.toLowerCase()===cv);
-  else if(by==='brand'&&bv)m=rev.find(t=>t.brand_code.toLowerCase()===bv);
-  else if(by==='phone'&&pv)m=rev.find(t=>t.phone.toLowerCase()===pv);
+  else if(by==='customer'&&cv)m=rev.find(t=>(t.customer_name||'').toLowerCase()===cv);
+  else if(by==='brand'&&bv)m=rev.find(t=>(t.brand_code||'').toLowerCase()===bv);
+  else if(by==='phone'&&pv)m=rev.find(t=>(t.phone||'').toLowerCase()===pv);
   if(!m)return;
   if(m.pos_id)$('#f_posid').value=m.pos_id;
   $('#f_brand').value=m.brand_code; $('#f_customer').value=m.customer_name; $('#f_phone').value=m.phone;
@@ -599,31 +745,31 @@ $('#intakeForm').addEventListener('submit',e=>{
   if(!brand||!cust||!phone){toast('Vui lòng nhập Mã TH, Tên quán và SĐT');return;}
   const cl=$('#f_created').value, status=$('#f_status').value;
   const t={id:$('#f_id').value,created_at:cl?new Date(cl).toISOString():new Date().toISOString(),brand_code:brand,pos_id:$('#f_posid').value.trim(),customer_name:cust,phone:phone,pos_system:$('#f_pos').value,addon_category:$('#f_cat').value,provider_or_device:$('#f_provider').value.trim(),support_type:supportType,technician:$('#f_tech').value,status:status,note:$('#f_note').value.trim(),completed_at:status==='Hoàn thành'?new Date().toISOString():null};
-  DATA.push(t); saveTicket(t); toast('Đã lưu phiếu '+t.id+(USE_API?' (đang đồng bộ…)':'')); resetForm(); updateCounts(); setTab('list');
+  DATA.push(t); saveTicket(t,'add'); toast('Đã lưu phiếu '+t.id+' (đang đồng bộ…)'); resetForm(); updateCounts(); setTab('list');
 });
 
 /* ---------- LIST ---------- */
 function renderListFilters(){
   const ft=$('#filterTech'),fs=$('#filterStatus'),cT=ft.value,cS=fs.value;
-  ft.innerHTML=`<option value="">Tất cả KT</option>`+CFG.tech.map(v=>`<option${v===cT?' selected':''}>${v}</option>`).join('');
-  fs.innerHTML=`<option value="">Tất cả trạng thái</option>`+STATUSES.map(v=>`<option${v===cS?' selected':''}>${v}</option>`).join('');
+  ft.innerHTML=`<option value="">Tất cả KT</option>`+CFG.tech.map(v=>`<option${v===cT?' selected':''}>${esc(v)}</option>`).join('');
+  fs.innerHTML=`<option value="">Tất cả trạng thái</option>`+STATUSES.map(v=>`<option${v===cS?' selected':''}>${esc(v)}</option>`).join('');
 }
 function renderList(){
   renderListFilters();
-  const q=$('#search').value.trim().toLowerCase(), ft=$('#filterTech').value, fs=$('#filterStatus').value;
+  const q=$('#search').value.trim().toLowerCase(), ft=$('#filterTech').value, fs=$('#filterStatus').value, admin=isAdmin();
   let rows=DATA.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).filter(t=>{
     if(ft&&t.technician!==ft)return false; if(fs&&t.status!==fs)return false;
-    if(q){const hay=(t.id+' '+t.customer_name+' '+t.phone+' '+t.brand_code).toLowerCase();if(!hay.includes(q))return false;} return true;});
+    if(q){const hay=((t.id||'')+' '+(t.customer_name||'')+' '+(t.phone||'')+' '+(t.brand_code||'')).toLowerCase();if(!hay.includes(q))return false;} return true;});
   $('#listTable tbody').innerHTML=rows.length?rows.map(t=>{
     const ph=procHours(t), cls=statusClass[t.status]||'s-new';
     return `<tr class="${isOverdue(t)?'row-overdue':''}">
-      <td><div class="c-main mono">${t.id}</div><div class="c-sub">${fmtShort(t.created_at)}</div></td>
-      <td><div class="c-main">${t.customer_name}</div><div class="c-sub">${t.pos_id?'POS '+t.pos_id+' · ':''}${t.brand_code} · ${t.phone}</div></td>
-      <td><div class="c-main">${t.provider_or_device||'—'}</div><div class="c-sub">${t.pos_system}</div></td>
-      <td>${t.technician||'—'} · ${t.support_type}</td>
+      <td><div class="c-main mono">${esc(t.id)}</div><div class="c-sub">${fmtShort(t.created_at)}</div></td>
+      <td><div class="c-main">${esc(t.customer_name)}</div><div class="c-sub">${t.pos_id?'POS '+esc(t.pos_id)+' · ':''}${esc(t.brand_code)} · ${esc(t.phone)}</div></td>
+      <td><div class="c-main">${esc(t.provider_or_device)||'—'}</div><div class="c-sub">${esc(t.pos_system)}</div></td>
+      <td>${esc(t.technician)||'—'} · ${esc(t.support_type)}</td>
       <td class="mono">${ph!=null?ph.toFixed(1):(isOpen(t)?'⏳ '+hoursOpen(t).toFixed(1):'—')}${isOverdue(t)?' <span class="ovd-tag">⚠</span>':''}</td>
-      <td><span class="st-wrap ${cls}"><select class="st-sel" data-id="${t.id}">${STATUSES.map(s=>`<option${s===t.status?' selected':''}>${s}</option>`).join('')}</select></span></td>
-      <td><button class="btn btn-sm btn-danger" data-del="${t.id}" type="button">Xóa</button></td>
+      <td><span class="st-wrap ${cls}"><select class="st-sel" data-id="${esc(t.id)}">${STATUSES.map(s=>`<option${s===t.status?' selected':''}>${s}</option>`).join('')}</select></span></td>
+      <td class="admin-only">${admin?`<button class="btn btn-sm btn-danger" data-del="${esc(t.id)}" type="button">Xóa</button>`:''}</td>
     </tr>`;}).join(''):`<tr><td colspan="7"><div class="empty">Chưa có phiếu nào khớp bộ lọc.</div></td></tr>`;
 }
 $('#listTable').addEventListener('change',e=>{
@@ -632,23 +778,24 @@ $('#listTable').addEventListener('change',e=>{
   const ns=sel.value;
   if(ns==='Hoàn thành'&&t.status!=='Hoàn thành')t.completed_at=new Date().toISOString();
   else if(ns!=='Hoàn thành')t.completed_at=null;
-  t.status=ns; saveTicket(t); toast('Đã cập nhật '+t.id+' → '+ns); renderList(); updateCounts();
+  t.status=ns; saveTicket(t,'update'); toast('Đã cập nhật '+t.id+' → '+ns); renderList(); updateCounts();
 });
 $('#listTable').addEventListener('click',e=>{
-  const b=e.target.closest('[data-del]'); if(!b)return; const id=b.dataset.del;
-  if(b.dataset.confirm){DATA=DATA.filter(x=>x.id!==id);saveData(DATA);deleteTicketRemote(id);toast('Đã xóa '+id);renderList();updateCounts();return;}
+  const b=e.target.closest('[data-del]'); if(!b)return; if(!isAdmin())return; const id=b.dataset.del;
+  if(b.dataset.confirm){DATA=DATA.filter(x=>x.id!==id);cacheSet(LS_DATA,DATA);deleteTicketRemote(id);toast('Đã xóa '+id);renderList();updateCounts();return;}
   b.dataset.confirm='1';b.textContent='Chắc chắn?';setTimeout(()=>{if(b){b.dataset.confirm='';b.textContent='Xóa';}},2500);
 });
 $('#search').addEventListener('input',renderList);
 $('#filterTech').addEventListener('change',renderList);
 $('#filterStatus').addEventListener('change',renderList);
 
-/* ---------- CONFIG ---------- */
+/* ---------- CONFIG (admin) ---------- */
 function renderConfig(){
   const map={tech:'#cfgTech',cat:'#cfgCat',pos:'#cfgPos'};
-  Object.keys(map).forEach(k=>{$(map[k]).innerHTML=CFG[k].map((v,i)=>`<div class="chip"><span>${v}</span><button class="x" data-k="${k}" data-i="${i}" type="button">×</button></div>`).join('')||`<div class="muted" style="font-size:12px">Chưa có mục nào</div>`;});
+  Object.keys(map).forEach(k=>{$(map[k]).innerHTML=CFG[k].map((v,i)=>`<div class="chip"><span>${esc(v)}</span><button class="x" data-k="${k}" data-i="${i}" type="button">×</button></div>`).join('')||`<div class="muted" style="font-size:12px">Chưa có mục nào</div>`;});
 }
 $('#tab-config').addEventListener('click',e=>{
+  if(!isAdmin())return;
   const add=e.target.closest('[data-add]');
   if(add){const k=add.dataset.add,inp=$('#add'+k.charAt(0).toUpperCase()+k.slice(1)),v=inp.value.trim();
     if(!v)return; if(CFG[k].includes(v)){toast('Mục đã tồn tại');return;}
@@ -657,6 +804,20 @@ $('#tab-config').addEventListener('click',e=>{
   if(x){CFG[x.dataset.k].splice(+x.dataset.i,1);saveConfigRemote();renderConfig();toast('Đã xóa');}
 });
 $$('#tab-config input').forEach(inp=>inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.closest('.add-row').querySelector('[data-add]').click();}}));
+
+/* ---------- AUDIT LOG (admin) ---------- */
+function renderAudit(){
+  const rows=LOGS.slice().reverse();
+  $('#auditCount').textContent=rows.length+' dòng';
+  $('#auditTable tbody').innerHTML=rows.length?rows.map(l=>`
+    <tr>
+      <td class="c-sub" style="white-space:nowrap">${esc(fmtDT(l.timestamp))}</td>
+      <td class="c-main">${esc(l.username)}</td>
+      <td><span class="log-act">${esc(l.action)}</span></td>
+      <td class="mono">${esc(l.ticket_id||'—')}</td>
+      <td>${esc(l.details||'')}</td>
+    </tr>`).join(''):`<tr><td colspan="5"><div class="empty">Chưa có nhật ký.</div></td></tr>`;
+}
 
 /* ---------- MISC ---------- */
 function updateCounts(){$('#listBadge').textContent=DATA.filter(isOpen).length;if(curTab==='overview')renderOverview();}
@@ -668,16 +829,78 @@ $('#themeBtn').addEventListener('click',()=>{
 });
 function tickClock(){$('#slaClock').textContent=new Date().toLocaleString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 tickClock(); setInterval(tickClock,30000);
-$('#refreshBtn').addEventListener('click',refreshFromServer);
+$('#refreshBtn').addEventListener('click',()=>refreshFromServer(true));
 
-renderProviderTags(); resetForm(); updateCounts(); setTab('overview');
+/* ===== ĐĂNG NHẬP / PHÂN QUYỀN ===== */
+function applyUserUI(){
+  const admin=isAdmin();
+  document.body.classList.toggle('is-admin',admin);
+  const name=currentUser.full_name||currentUser.username||'Người dùng';
+  $('#userName').textContent=name;
+  $('#userAv').textContent=(name.trim()[0]||'?').toUpperCase();
+  const rc=$('#userRole'); rc.textContent=admin?'Admin':'KT'; rc.classList.toggle('admin',admin);
+}
+let appStarted=false;
+function startApp(){
+  applyUserUI();
+  $('#loginGate').hidden=true; $('#app').hidden=false;
+  if(appStarted){ setTab('overview'); return; }
+  appStarted=true;
+  renderProviderTags(); resetForm(); updateCounts(); lastSyncTs=Date.now(); setTab('overview');
+  (async()=>{ setSync(true); const ok=await syncAll(); lastSyncTs=Date.now(); setSync(false); if(ok){resetForm();updateCounts();renderCurrent();} })();
+  setInterval(()=>{ if(!syncing&&['overview','detail','list','audit'].includes(curTab))refreshFromServer(); },120000);
+}
+function lgErr(m){const e=$('#lg_err');e.textContent=m;e.hidden=false;}
+/* ---- Mã xác nhận (captcha) client-side ---- */
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+let capCode='';
+function genCaptcha(){const cs='abcdefghjkmnpqrstuvwxyz23456789';capCode='';for(var i=0;i<5;i++)capCode+=cs[rnd(0,cs.length-1)];drawCaptcha(capCode);}
+function drawCaptcha(code){const c=$('#capCanvas');if(!c)return;const g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.fillStyle='#eef0f3';g.fillRect(0,0,c.width,c.height);
+  for(var i=0;i<5;i++){g.strokeStyle='rgba('+rnd(40,160)+','+rnd(40,160)+','+rnd(40,160)+',.5)';g.lineWidth=1;g.beginPath();g.moveTo(rnd(0,c.width),rnd(0,c.height));g.lineTo(rnd(0,c.width),rnd(0,c.height));g.stroke();}
+  for(var j=0;j<code.length;j++){g.save();g.translate(18+j*22,c.height/2+rnd(-3,3));g.rotate(rnd(-24,24)*Math.PI/180);g.font='bold '+rnd(22,27)+'px Georgia,serif';g.fillStyle='rgb('+rnd(20,80)+','+rnd(20,80)+','+rnd(70,150)+')';g.textAlign='center';g.textBaseline='middle';g.fillText(code[j],0,0);g.restore();}
+  for(var k=0;k<26;k++){g.fillStyle='rgba('+rnd(40,160)+','+rnd(40,160)+','+rnd(40,160)+',.6)';g.beginPath();g.arc(rnd(0,c.width),rnd(0,c.height),1,0,7);g.fill();}}
+$('#capCanvas').addEventListener('click',genCaptcha);
+$('#capReload').addEventListener('click',genCaptcha);
+$('#loginForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const u=$('#lg_user').value.trim(), p=$('#lg_pass').value, cap=$('#lg_cap').value.trim().toLowerCase();
+  if(!u||!p){lgErr('Vui lòng nhập tài khoản và mật khẩu.');return;}
+  if(cap!==capCode){lgErr('Vui lòng nhập đúng mã xác nhận!');genCaptcha();$('#lg_cap').value='';return;}
+  const btn=$('#lg_btn'); btn.disabled=true; btn.textContent='Đang kiểm tra…'; $('#lg_err').hidden=true;
+  const res=await api({action:'login',username:u,password:p},15000);
+  btn.disabled=false; btn.textContent='Đăng nhập';
+  if(res&&res.ok){
+    const usr=res.user||{};
+    currentUser={username:usr.username||u, full_name:usr.full_name||usr.fullname||u, role:(usr.role||res.role||'kt')};
+    try{sessionStorage.setItem(LS_USER,JSON.stringify(currentUser));}catch(e2){}
+    $('#lg_pass').value=''; startApp();
+  }else{
+    lgErr(res&&res.error?res.error:'Đăng nhập thất bại. Vui lòng thử lại.');
+    genCaptcha(); $('#lg_cap').value='';
+  }
+});
+$('#logoutBtn').addEventListener('click',function(){try{sessionStorage.removeItem(LS_USER);}catch(e){} location.reload();});
 
-/* Đồng bộ kho chung lúc mở + tự làm mới mỗi 45s khi ở Tổng quan / Danh sách */
-(async()=>{
-  if(!USE_API){$('#refreshBtn').hidden=true;return;}
-  setSync(true); await syncConfig(); await syncTickets(); setSync(false);
-  resetForm(); updateCounts();
-  if(curTab==='overview')renderOverview(); else if(curTab==='list')renderList(); else if(curTab==='config')renderConfig();
+/* Khởi động: nếu đã đăng nhập trong phiên thì vào thẳng */
+async function connTest(){
+  const el=$('#lg_conn'); if(!el)return;
+  el.textContent='⏳ Đang kiểm tra kết nối máy chủ…'; el.style.color='var(--muted)';
+  const t0=Date.now();
+  try{
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
+    const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',username:'__conntest__',password:'x'}),signal:ctrl.signal});
+    clearTimeout(to);
+    await r.text();
+    el.textContent='✓ Kết nối máy chủ OK — '+(Date.now()-t0)+'ms (HTTP '+r.status+')';
+    el.style.color='#15a06b';
+  }catch(ex){
+    el.textContent='✗ KHÔNG nhận được phản hồi ('+(Date.now()-t0)+'ms): '+((ex&&ex.name)||'')+' '+((ex&&ex.message)||ex);
+    el.style.color='#d83a30';
+  }
+}
+(function initAuth(){
+  let saved=null; try{saved=JSON.parse(sessionStorage.getItem(LS_USER)||'null');}catch(e){}
+  if(saved&&saved.username){ currentUser=saved; startApp(); }
+  else{ genCaptcha(); setTimeout(()=>{var el=$('#lg_user');el&&el.focus();},120); }
 })();
-setInterval(()=>{ if(USE_API&&!syncing&&(curTab==='overview'||curTab==='list'))refreshFromServer(); },45000);
 </script>
