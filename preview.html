@@ -213,6 +213,11 @@ textarea{resize:vertical;width:100%}
 .login-btn:hover{filter:brightness(1.08)}
 .login-btn:disabled{opacity:.7;cursor:default}
 .login-note{text-align:center;color:var(--muted);font-size:11px}
+.cap-row{display:flex;gap:9px;align-items:center}
+.cap-row input{flex:1;min-width:0;letter-spacing:2px;font-family:var(--mono)}
+#capCanvas{border:1px solid var(--border);border-radius:8px;cursor:pointer;flex:0 0 auto}
+.cap-reload{border:1px solid var(--border);background:var(--panel-2);color:var(--fg);border-radius:8px;width:40px;height:44px;cursor:pointer;font-size:18px;flex:0 0 auto}
+.cap-reload:hover{border-color:var(--accent);color:var(--accent)}
 
 /* role-based hiding */
 body:not(.is-admin) .admin-only{display:none !important}
@@ -239,6 +244,13 @@ body:not(.is-admin) .admin-only{display:none !important}
     <div><h2 class="login-title">Đăng nhập hệ thống</h2><div class="login-sub">Vui lòng đăng nhập để tiếp tục</div></div>
     <div class="login-field"><label>Tài khoản</label><input id="lg_user" name="username" autocomplete="username" placeholder="Nhập tài khoản"></div>
     <div class="login-field"><label>Mật khẩu</label><input id="lg_pass" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu"></div>
+    <div class="login-field"><label>Mã xác nhận</label>
+      <div class="cap-row">
+        <input id="lg_cap" autocomplete="off" maxlength="6" placeholder="Nhập mã bên phải">
+        <canvas id="capCanvas" width="128" height="44" title="Bấm để đổi mã khác"></canvas>
+        <button type="button" id="capReload" class="cap-reload" title="Đổi mã khác">↻</button>
+      </div>
+    </div>
     <div class="login-err" id="lg_err" hidden></div>
     <button type="submit" class="login-btn" id="lg_btn">Đăng nhập</button>
     <div class="login-note">Hệ thống nội bộ · Report Team</div>
@@ -832,10 +844,21 @@ function startApp(){
   setInterval(()=>{ if(!syncing&&['overview','detail','list','audit'].includes(curTab))refreshFromServer(); },45000);
 }
 function lgErr(m){const e=$('#lg_err');e.textContent=m;e.hidden=false;}
+/* ---- Mã xác nhận (captcha) client-side ---- */
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+let capCode='';
+function genCaptcha(){const cs='abcdefghjkmnpqrstuvwxyz23456789';capCode='';for(var i=0;i<5;i++)capCode+=cs[rnd(0,cs.length-1)];drawCaptcha(capCode);}
+function drawCaptcha(code){const c=$('#capCanvas');if(!c)return;const g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);g.fillStyle='#eef0f3';g.fillRect(0,0,c.width,c.height);
+  for(var i=0;i<5;i++){g.strokeStyle='rgba('+rnd(40,160)+','+rnd(40,160)+','+rnd(40,160)+',.5)';g.lineWidth=1;g.beginPath();g.moveTo(rnd(0,c.width),rnd(0,c.height));g.lineTo(rnd(0,c.width),rnd(0,c.height));g.stroke();}
+  for(var j=0;j<code.length;j++){g.save();g.translate(18+j*22,c.height/2+rnd(-3,3));g.rotate(rnd(-24,24)*Math.PI/180);g.font='bold '+rnd(22,27)+'px Georgia,serif';g.fillStyle='rgb('+rnd(20,80)+','+rnd(20,80)+','+rnd(70,150)+')';g.textAlign='center';g.textBaseline='middle';g.fillText(code[j],0,0);g.restore();}
+  for(var k=0;k<26;k++){g.fillStyle='rgba('+rnd(40,160)+','+rnd(40,160)+','+rnd(40,160)+',.6)';g.beginPath();g.arc(rnd(0,c.width),rnd(0,c.height),1,0,7);g.fill();}}
+$('#capCanvas').addEventListener('click',genCaptcha);
+$('#capReload').addEventListener('click',genCaptcha);
 $('#loginForm').addEventListener('submit',async function(e){
   e.preventDefault();
-  const u=$('#lg_user').value.trim(), p=$('#lg_pass').value;
+  const u=$('#lg_user').value.trim(), p=$('#lg_pass').value, cap=$('#lg_cap').value.trim().toLowerCase();
   if(!u||!p){lgErr('Vui lòng nhập tài khoản và mật khẩu.');return;}
+  if(cap!==capCode){lgErr('Vui lòng nhập đúng mã xác nhận!');genCaptcha();$('#lg_cap').value='';return;}
   const btn=$('#lg_btn'); btn.disabled=true; btn.textContent='Đang kiểm tra…'; $('#lg_err').hidden=true;
   const res=await api({action:'login',username:u,password:p});
   btn.disabled=false; btn.textContent='Đăng nhập';
@@ -846,6 +869,7 @@ $('#loginForm').addEventListener('submit',async function(e){
     $('#lg_pass').value=''; startApp();
   }else{
     lgErr(res&&res.error?res.error:'Đăng nhập thất bại. Vui lòng thử lại.');
+    genCaptcha(); $('#lg_cap').value='';
   }
 });
 $('#logoutBtn').addEventListener('click',function(){try{sessionStorage.removeItem(LS_USER);}catch(e){} location.reload();});
@@ -854,6 +878,6 @@ $('#logoutBtn').addEventListener('click',function(){try{sessionStorage.removeIte
 (function initAuth(){
   let saved=null; try{saved=JSON.parse(sessionStorage.getItem(LS_USER)||'null');}catch(e){}
   if(saved&&saved.username){ currentUser=saved; startApp(); }
-  else{ setTimeout(()=>{var el=$('#lg_user');el&&el.focus();},120); }
+  else{ genCaptcha(); setTimeout(()=>{var el=$('#lg_user');el&&el.focus();},120); }
 })();
 </script>
